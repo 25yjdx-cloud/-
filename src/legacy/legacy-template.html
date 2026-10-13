@@ -1,0 +1,631 @@
+﻿<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123d32">
+  <meta name="description" content="رفيقك اليومي للقرآن الكريم والأذكار والتسبيح والأدعية">
+  <title>زاد | القرآن والأذكار والأدعية</title>
+  <link id="seasonal-manifest" rel="manifest" href="manifest.json">
+  <link id="seasonal-app-icon" rel="icon" type="image/png" href="assets/icons/icon-default.png">
+  <link id="seasonal-touch-icon" rel="apple-touch-icon" href="assets/icons/icon-default.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20261013">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#" aria-label="زاد، الصفحة الرئيسية">
+        <span class="brand-mark" aria-hidden="true">ز</span>
+        <span><strong>زاد</strong><small>طمأنينةٌ في يومك</small></span>
+      </a>
+      <div class="header-actions">
+        <span class="header-date d-none d-md-inline">مساحة للسكينة والذكر</span>
+        <div class="header-icon-bar" aria-label="أدوات التطبيق">
+          <button id="theme-toggle" class="icon-button" type="button" aria-label="تفعيل الوضع الليلي" title="الوضع الليلي">
+            <span aria-hidden="true">◐</span>
+          </button>
+          <button id="account-open" class="icon-button" type="button" data-bs-toggle="modal" data-bs-target="#account-modal" aria-label="الملف الشخصي" title="الملف الشخصي">
+            <span aria-hidden="true">👤</span>
+          </button>
+          <button id="settings-open" class="icon-button" type="button" data-bs-toggle="modal" data-bs-target="#settings-modal" aria-label="الإعدادات والتنبيهات" title="الإعدادات والتنبيهات">
+            <span aria-hidden="true">⚙</span>
+          </button>
+          <button id="onboarding-tour-open" class="icon-button" type="button" aria-label="دليل الاستخدام / كيف تستخدم زاد؟" title="دليل الاستخدام / كيف تستخدم زاد؟">
+            <span aria-hidden="true">💡</span>
+          </button>
+          <button id="feedback-btn" class="icon-button" type="button" aria-label="إرسال الاقتراحات والآراء" title="إرسال الاقتراحات والآراء">
+            <span aria-hidden="true">✉</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container app-shell">
+    <nav class="main-navigation" aria-label="أقسام التطبيق">
+      <div class="nav nav-pills app-tabs" id="appTabs" role="tablist">
+        <button class="nav-link active" id="quran-tab" data-bs-toggle="pill" data-bs-target="#quran-panel" type="button" role="tab" aria-controls="quran-panel" aria-selected="true">
+          <span aria-hidden="true">۞</span> القرآن الكريم
+        </button>
+        <button class="nav-link" id="azkar-tab" data-bs-toggle="pill" data-bs-target="#azkar-panel" type="button" role="tab" aria-controls="azkar-panel" aria-selected="false">
+          <span aria-hidden="true">✧</span> الأذكار
+        </button>
+        <button class="nav-link" id="tasbeeh-tab" data-bs-toggle="pill" data-bs-target="#tasbeeh-panel" type="button" role="tab" aria-controls="tasbeeh-panel" aria-selected="false">
+          <span aria-hidden="true">◉</span> المسبحة
+        </button>
+        <button class="nav-link" id="duas-tab" data-bs-toggle="pill" data-bs-target="#duas-panel" type="button" role="tab" aria-controls="duas-panel" aria-selected="false">
+          <span aria-hidden="true">♡</span> الأدعية ودعاء الختم
+        </button>
+      </div>
+    </nav>
+
+    <p id="load-status" class="load-status" role="status">جارٍ تحميل بيانات التطبيق...</p>
+
+    <div class="tab-content">
+      <section class="tab-pane fade show active" id="quran-panel" role="tabpanel" aria-labelledby="quran-tab" tabindex="0">
+        <div class="quran-layout">
+          <aside id="quran-index" class="index-panel offcanvas-lg offcanvas-start" tabindex="-1" aria-labelledby="index-title">
+            <div class="offcanvas-header index-header">
+              <div>
+                <p class="section-kicker mb-1">تنقّل سريع</p>
+                <h2 id="index-title" class="h5 mb-0">فهرس المصحف</h2>
+              </div>
+              <button class="btn-close d-lg-none" type="button" data-bs-dismiss="offcanvas" aria-label="إغلاق الفهرس"></button>
+            </div>
+            <div class="offcanvas-body index-body">
+              <div class="index-switch" role="group" aria-label="نوع الفهرس">
+                <button id="surah-index-tab" class="active" type="button" aria-pressed="true">السور</button>
+                <button id="juz-index-tab" type="button" aria-pressed="false">الأجزاء</button>
+              </div>
+              <label class="visually-hidden" for="index-search">ابحث في الفهرس</label>
+              <input id="index-search" class="form-control index-search" type="search" placeholder="ابحث عن سورة أو جزء..." autocomplete="off">
+              <p id="index-count" class="index-count" aria-live="polite"></p>
+              <div id="index-list" class="index-list" aria-label="قائمة السور"></div>
+            </div>
+          </aside>
+
+          <div class="reader-column">
+            <div class="reader-actions">
+              <details class="reader-quick-menu">
+                <summary class="reader-quick-menu-trigger" aria-label="فتح أدوات المصحف">
+                  <span aria-hidden="true">☰</span><span>أدوات المصحف</span>
+                </summary>
+                <div class="reader-quick-menu-panel" aria-label="أدوات قراءة المصحف">
+                  <section class="quran-search" aria-labelledby="quran-search-title">
+                    <label id="quran-search-title" for="quran-text-search">بحث في نص القرآن</label>
+                    <div class="quran-search-control">
+                      <input id="quran-text-search" class="form-control" type="search" placeholder="اكتب كلمة أو عبارة من القرآن..." autocomplete="off" aria-controls="quran-search-results">
+                      <button id="quran-search-clear" type="button" aria-label="مسح بحث القرآن" hidden>مسح</button>
+                    </div>
+                    <p id="quran-search-status" role="status" aria-live="polite">ابحث في نص الآيات العربية.</p>
+                    <div id="quran-search-results" class="quran-search-results" aria-label="نتائج البحث"></div>
+                  </section>
+                  <button id="open-quran-index" class="tool-button" type="button"><span aria-hidden="true">☷</span> الفهرس</button>
+                  <button id="save-bookmark" class="tool-button primary-tool" type="button"><span aria-hidden="true">☆</span> حفظ علامة</button>
+                  <button id="go-bookmark" class="tool-button" type="button" disabled><span aria-hidden="true">↗</span> انتقال للعلامة</button>
+                  <button id="manage-bookmarks" class="tool-button" type="button"><span aria-hidden="true">▤</span> إدارة العلامات <span id="bookmark-count" class="bookmark-count">0</span></button>
+                  <button id="auto-page-toggle" class="tool-button" type="button" aria-pressed="false">▶ بدء التقليب</button>
+                  <label class="auto-page-speed" for="auto-page-speed">مدة الصفحة بالثواني</label>
+                  <input id="auto-page-speed" class="form-control form-control-sm" type="number" min="1" max="86400" step="1" value="45" inputmode="numeric" aria-label="مدة عرض الصفحة بالثواني">
+                  <button id="wake-lock-toggle" class="tool-button" type="button" aria-pressed="false">☼ إبقاء الشاشة مستيقظة</button>
+                  <button id="zoom-toggle" class="tool-button" type="button" aria-pressed="false">⌕ تكبير الصفحة</button>
+                  <button id="fit-to-screen-toggle" class="tool-button" type="button" aria-pressed="false">عرض الصفحة بالكامل (Fit to Screen)</button>
+                  <label class="brightness-menu-control" for="brightness-range">
+                    <span>سطوع صفحة المصحف</span>
+                    <input id="brightness-range" type="range" min="45" max="125" value="100" aria-label="سطوع صفحة المصحف">
+                  </label>
+                </div>
+              </details>
+            </div>
+
+            <section id="quran-reader" class="quran-reader" aria-label="عارض صفحات المصحف">
+              <div class="reader-toolbar">
+                <div class="page-navigation">
+                  <button id="quran-previous" class="page-nav-button" type="button" aria-label="الصفحة السابقة">‹</button>
+                  <label class="visually-hidden" for="quran-page-number">رقم الصفحة</label>
+                  <input id="quran-page-number" class="page-number-input" type="number" min="1" value="1" inputmode="numeric">
+                  <span class="page-divider">/</span>
+                  <span id="quran-page-total" class="page-total">604</span>
+                  <button id="quran-next" class="page-nav-button" type="button" aria-label="الصفحة التالية">›</button>
+                </div>
+                <div class="reader-settings">
+                  <button id="focus-toggle" class="reader-tool-button" type="button" aria-label="تفعيل وضع التركيز" title="وضع التركيز"><span aria-hidden="true">⛶</span></button>
+                </div>
+              </div>
+              <div class="mushaf-viewport">
+                <button id="quran-floating-previous" class="floating-page-nav floating-page-previous" type="button" aria-label="الصفحة السابقة">‹</button>
+                <div class="mushaf-stage">
+                  <div id="reader-brightness-overlay" class="brightness-overlay" aria-hidden="true"></div>
+                  <div id="quran-bookmark-ribbon" class="quran-bookmark-ribbon" role="status" aria-label="هذه الصفحة محفوظة كعلامة" aria-hidden="true" hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-4-6 4z"></path>
+                    </svg>
+                    <span>محفوظة</span>
+                  </div>
+                  <img id="quran-page-image" class="quran-page-image" alt="صفحة المصحف" fetchpriority="high">
+                  <p id="quran-page-error" class="reader-message" role="status" hidden></p>
+                </div>
+                <button id="quran-floating-next" class="floating-page-nav floating-page-next" type="button" aria-label="الصفحة التالية">›</button>
+              </div>
+              <section id="quran-search-selection" class="quran-search-selection" aria-live="polite" hidden>
+                <div class="quran-search-selection-heading">
+                  <strong id="quran-search-selection-reference"></strong>
+                  <button id="quran-search-selection-close" type="button" aria-label="إخفاء نتيجة البحث">×</button>
+                </div>
+                <div id="quran-search-selection-verses" class="quran-search-selection-verses"></div>
+              </section>
+              <div class="reader-footer">
+                <span id="current-surah-name">الفاتحة</span>
+                <span id="reading-position">صفحة 1 من 604</span>
+              </div>
+            </section>
+            <p class="reader-hint">اضغط على صفحة المصحف لتفعيل وضع التركيز.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-pane fade" id="azkar-panel" role="tabpanel" aria-labelledby="azkar-tab" tabindex="0">
+        <div class="section-intro">
+          <div>
+            <p class="section-kicker">ذِكْرٌ يطمئن القلب</p>
+            <h1>الأذكار اليومية</h1>
+            <p class="section-description">اختر قسماً لعرض أذكاره، واضغط على العداد بعد كل مرة.</p>
+          </div>
+        </div>
+        <div class="daily-progress" aria-label="إنجاز الأذكار اليوم">
+          <div class="daily-progress-heading"><strong id="azkar-progress-label">0% مكتمل اليوم</strong><span id="azkar-progress-count">0 من 0</span></div>
+          <div class="progress" role="progressbar" aria-label="نسبة إكمال الأذكار" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="azkar-progress-bar" class="progress-bar"></div>
+          </div>
+        </div>
+        <div id="azkar-list" class="azkar-accordion accordion"></div>
+      </section>
+
+      <section class="tab-pane fade" id="tasbeeh-panel" role="tabpanel" aria-labelledby="tasbeeh-tab" tabindex="0">
+        <div class="section-intro">
+          <div>
+            <p class="section-kicker">سَبِّحْ واذكر</p>
+            <h1>المسبحة الإلكترونية</h1>
+            <p class="section-description">عدادك محفوظ تلقائياً على هذا الجهاز.</p>
+          </div>
+        </div>
+        <div class="tasbeeh-layout">
+          <section class="tasbeeh-main-card" aria-label="عداد التسبيح">
+            <span class="tasbeeh-orbit orbit-one" aria-hidden="true"></span>
+            <span class="tasbeeh-orbit orbit-two" aria-hidden="true"></span>
+            <p class="tasbeeh-overline">وِرْدُكَ الحالي</p>
+            <p id="tasbeeh-phrase" class="tasbeeh-phrase">سبحان الله</p>
+            <output id="tasbeeh-count" class="tasbeeh-count" aria-live="polite">0</output>
+            <div class="tasbeeh-actions">
+              <button id="tasbeeh-increment" class="tasbeeh-count-button" type="button">سبّح <span aria-hidden="true">＋</span></button>
+              <button id="tasbeeh-reset" class="tasbeeh-reset-button" type="button">تصفير العداد</button>
+            </div>
+          </section>
+
+          <section class="tasbeeh-phrases-section" aria-labelledby="tasbeeh-phrases-title">
+            <div class="phrases-heading">
+              <div>
+                <p class="section-kicker mb-1">اختر الذكر</p>
+                <h2 id="tasbeeh-phrases-title" class="h5">صيغ التسبيح</h2>
+              </div>
+              <span id="tasbeeh-phrase-count" class="index-count"></span>
+            </div>
+            <div id="tasbeeh-list" class="tasbeeh-phrases-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-pane fade" id="duas-panel" role="tabpanel" aria-labelledby="duas-tab" tabindex="0">
+        <div class="section-intro">
+          <div>
+            <p class="section-kicker">مناجاة ودعاء</p>
+            <h1>الأدعية ودعاء الختم</h1>
+            <p class="section-description">ابحث، انسخ، وراجع دعاءً عشوائياً من قلب اليوم.</p>
+          </div>
+        </div>
+
+        <article id="dua-random-card" class="dua-random-card" aria-live="polite">
+          <div class="dua-random-header">
+            <div>
+              <p class="section-kicker mb-1">دعاء اليوم</p>
+              <h2 id="dua-random-title" class="h5 mb-0">دعاء عشوائي</h2>
+            </div>
+            <button id="random-dua-button" class="btn btn-sm btn-outline-success" type="button">دعاء جديد</button>
+          </div>
+          <p id="dua-random-text" class="dua-random-text">اللهم اجعلنا من المقبولين، وبارك في وقتنا، واغفر لنا ذنوبنا.</p>
+        </article>
+
+        <div class="duas-toolbar">
+          <label class="visually-hidden" for="duas-search">ابحث في الأدعية</label>
+          <input id="duas-search" class="form-control index-search" type="search" placeholder="ابحث في الأدعية..." autocomplete="off">
+          <label class="visually-hidden" for="duas-filter">تصفية حسب القسم</label>
+          <select id="duas-filter" class="form-select">
+            <option value="">كل الأقسام</option>
+            <option value="أدعية عامة">الأدعية العامة</option>
+            <option value="دعاء الختم">دعاء الختم</option>
+          </select>
+        </div>
+        <div id="duas-list" class="duas-list" aria-live="polite"></div>
+      </section>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p class="site-footer-message">تقبل الله طاعتكم</p>
+    <button id="developer-info-open" class="developer-info-chip" type="button" data-bs-toggle="modal" data-bs-target="#developer-modal" aria-label="عن المطور">
+      <span aria-hidden="true">✦</span> عن المطور
+    </button>
+  </footer>
+
+  <div class="modal fade" id="developer-modal" tabindex="-1" aria-labelledby="developer-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content developer-modal-content">
+        <div class="modal-header">
+          <div>
+            <p class="section-kicker mb-1">بكل محبة وامتنان</p>
+            <h2 id="developer-modal-title" class="modal-title h5">عن المطور</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body developer-modal-body">
+          <p><span aria-hidden="true">✧</span><strong>تطوير وتصميم:</strong> أحمد شمس</p>
+          <p><span aria-hidden="true">♡</span><strong>دعاء:</strong> نسألكم الدعاء</p>
+          <nav class="developer-social-links" aria-label="التواصل مع المطور">
+            <a class="developer-social-link" href="https://www.instagram.com/ahmad.shmsldyn" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+                <circle cx="12" cy="12" r="4"></circle>
+                <circle class="social-icon-dot" cx="18" cy="6" r="1"></circle>
+              </svg>
+              <span>Instagram</span>
+            </a>
+            <span class="developer-social-link is-inactive" aria-disabled="true" title="غير متاح حالياً">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M14 21v-8h3l.5-4H14V7c0-1.2.4-2 2-2h1.7V1.4C17 1.2 15.8 1 14.5 1 11.5 1 9.5 2.8 9.5 6.2V9H6v4h3.5v8z"></path>
+              </svg>
+              <span>Facebook · غير نشط</span>
+            </span>
+            <span class="developer-social-link is-inactive" aria-disabled="true" title="غير متاح حالياً">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 2.5a9.5 9.5 0 0 0-3 18.5c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.2-3.4-1.2-.5-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.4-1.1.6-1.3-2.2-.3-4.5-1.1-4.5-4.8 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 4.9 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.7-2.3 4.5-4.5 4.8.4.3.7.9.7 1.8v2.7c0 .3.2.6.7.5A9.5 9.5 0 0 0 12 2.5z"></path>
+              </svg>
+              <span>GitHub · غير نشط</span>
+            </span>
+            <a class="developer-social-link" href="mailto:ahmadshames25@gmail.com" target="_blank" rel="noopener noreferrer" aria-label="البريد الإلكتروني" title="البريد الإلكتروني">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="2.5" y="4.5" width="19" height="15" rx="2"></rect>
+                <path d="m3.5 6 8.5 7 8.5-7"></path>
+              </svg>
+              <span>البريد الإلكتروني</span>
+            </a>
+          </nav>
+          <button id="developer-share" class="btn btn-success developer-share-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <path d="m8.7 10.6 6.6-4.2m-6.6 7 6.6 4"></path>
+            </svg>
+            مشاركة التطبيق (الدال على الخير كفاعله)
+          </button>
+          <p id="developer-share-status" class="developer-share-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="share-modal" tabindex="-1" aria-labelledby="share-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content share-modal-content">
+        <div class="modal-header">
+          <div>
+            <p class="section-kicker mb-1">انشر الخير</p>
+            <h2 id="share-modal-title" class="modal-title h5">مشاركة تطبيق زاد</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body share-modal-body">
+          <p>شارك القرآن والأذكار والأدعية مع من تحب.</p>
+          <a id="share-whatsapp" class="share-action share-whatsapp" href="https://api.whatsapp.com/send?text=" target="_blank" rel="noopener noreferrer">
+            <span aria-hidden="true">◉</span> مشاركة عبر واتساب
+          </a>
+          <a id="share-telegram" class="share-action share-telegram" href="https://t.me/share/url?url=" target="_blank" rel="noopener noreferrer">
+            <span aria-hidden="true">➤</span> مشاركة عبر تيليجرام
+          </a>
+          <button id="share-copy-link" class="share-action share-copy" type="button">
+            <span aria-hidden="true">↗</span> نسخ الرابط
+          </button>
+          <p id="share-modal-status" class="share-modal-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="share-toast" class="share-toast" role="status" aria-live="polite" aria-atomic="true" hidden>
+    تم نسخ الرابط بنجاح!
+  </div>
+
+  <div class="modal fade" id="bookmarks-modal" tabindex="-1" aria-labelledby="bookmarks-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content bookmarks-modal-content">
+        <div class="modal-header">
+          <div>
+            <p class="section-kicker mb-1">مواضع محفوظة</p>
+            <h2 id="bookmarks-title" class="modal-title h5">إدارة العلامات</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div id="bookmarks-list" class="modal-body bookmarks-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="settings-modal" tabindex="-1" aria-labelledby="settings-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+      <div class="modal-content settings-modal-content">
+        <div class="modal-header">
+          <div>
+            <p class="section-kicker mb-1">تخصيص تجربتك</p>
+            <h2 id="settings-title" class="modal-title h5">الإعدادات والتذكيرات</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body settings-body">
+          <section class="settings-card">
+            <h3 class="h6 settings-heading">تذكيرات يومية</h3>
+            <form id="reminder-settings" class="reminder-settings">
+              <label for="reminder-email" class="form-label">البريد الإلكتروني</label>
+              <input id="reminder-email" class="form-control" type="email" autocomplete="email" placeholder="name@example.com" aria-describedby="reminder-email-error">
+              <p id="reminder-email-error" class="settings-note" role="alert" hidden></p>
+              <p class="settings-note">يُحفظ البريد على هذا الجهاز فقط. يعمل هذا الإصدار بتذكيرات المتصفح، ولا يرسل رسائل بريد إلكتروني مباشرة.</p>
+              <div class="reminder-time-grid">
+                <label>قراءة القرآن <input id="reminder-quran" class="form-control" type="time"></label>
+                <label>أذكار الصباح <input id="reminder-morning" class="form-control" type="time"></label>
+                <label>أذكار المساء <input id="reminder-evening" class="form-control" type="time"></label>
+              </div>
+              <button id="reminder-notifications" class="btn btn-outline-success" type="button">تفعيل تنبيهات المتصفح</button>
+              <p id="reminder-status" class="settings-note" role="status"></p>
+            </form>
+          </section>
+
+          <section class="settings-card">
+            <h3 class="h6 settings-heading">المظهر والتخصيص</h3>
+            <div class="settings-grid">
+              <label class="settings-control" for="quran-theme">خلفية المصحف
+                <select id="quran-theme" class="form-select">
+                  <option value="paper">ورق كلاسيكي</option>
+                  <option value="night">ليلي داكن</option>
+                  <option value="warm">مريح للعين</option>
+                </select>
+              </label>
+
+              <label class="settings-control" for="reading-font-size">حجم الخط
+                <div class="range-wrap">
+                  <input id="reading-font-size" type="range" min="14" max="28" step="1" value="16">
+                  <span id="reading-font-size-value">16</span>
+                </div>
+              </label>
+
+              <label class="settings-control" for="arabic-font">خط العربية
+                <select id="arabic-font" class="form-select">
+                  <option value="system">افتراضي</option>
+                  <option value="naskh">نسخ</option>
+                  <option value="sans">سهل القراءة</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section id="support-settings-section" class="settings-card">
+            <h3 class="h6 settings-heading">ساهم في تطوير وتوسيع زاد</h3>
+            <div class="support-tiers">
+              <div class="support-tiers-group">
+                <button class="support-tier" type="button" data-support-amount="50" aria-label="اختيار مساند، ٥٠ جنيهاً مصرياً" aria-pressed="false">
+                  <strong>مساند</strong>
+                  <span>٥٠ ج.م</span>
+                </button>
+                <button class="support-tier prominent" type="button" data-support-amount="100" aria-label="اختيار مشارك، ١٠٠ جنيه مصري" aria-pressed="false">
+                  <strong>مشارك</strong>
+                  <span>١٠٠ ج.م</span>
+                </button>
+                <button class="support-tier" type="button" data-support-amount="250" aria-label="اختيار راعي، ٢٥٠ جنيهاً مصرياً" aria-pressed="false">
+                  <strong>راعي</strong>
+                  <span>٢٥٠ ج.م</span>
+                </button>
+                <button class="support-tier" type="button" data-support-amount="500" aria-label="اختيار داعم رئيسي أو كفيل، ٥٠٠ جنيه مصري" aria-pressed="false">
+                  <strong>داعم رئيسي / كفيل</strong>
+                  <span>٥٠٠ ج.م</span>
+                </button>
+              </div>
+            </div>
+            <button id="support-open" class="btn btn-outline-success support-open-button" type="button">اختيار وسيلة دعم آمنة</button>
+          </section>
+
+          <details id="feedback-section" class="settings-card feedback-disclosure">
+            <summary class="feedback-disclosure-toggle">💡 شاركنا رأيك ومقترحاتك / Feedback &amp; Suggestions</summary>
+            <div class="feedback-disclosure-content">
+              <form id="feedback-form">
+                <label class="settings-control" for="user-notes">شاركنا ملاحظة أو اقتراحاً لتطوير التطبيق
+                  <textarea id="user-notes" class="form-control" rows="4" maxlength="2000" required placeholder="اكتب اقتراحك أو بلاغك هنا..."></textarea>
+                </label>
+                <div class="feedback-actions">
+                  <label class="settings-control" for="feedback-category">نوع الرسالة
+                    <select id="feedback-category" class="form-select">
+                      <option value="suggestion">اقتراح</option>
+                      <option value="issue">بلاغ عن مشكلة</option>
+                      <option value="other">أخرى</option>
+                    </select>
+                  </label>
+                  <button id="feedback-submit" class="btn btn-success" type="submit">إرسال للمراجعة</button>
+                </div>
+                <p id="notes-status" class="settings-note" role="status" aria-live="polite"></p>
+              </form>
+            </div>
+          </details>
+
+          <section class="settings-card">
+            <h3 class="h6 settings-heading">نقطة آمنة / استرجاع</h3>
+            <div class="backup-actions">
+              <button id="safe-point-create" class="btn btn-outline-success" type="button">إنشاء نقطة آمنة</button>
+              <button id="safe-point-restore" class="btn btn-outline-secondary" type="button">استعادة نقطة آمنة</button>
+            </div>
+            <p id="safe-point-status" class="settings-note" role="status"></p>
+          </section>
+
+          <hr>
+          <section class="settings-card">
+            <h3 class="h6 settings-heading">النسخ الاحتياطي</h3>
+            <p class="settings-note">صدّر العلامات والإعدادات والعدّادات إلى ملف JSON، أو استعدها من نسخة احتياطية.</p>
+            <div class="backup-actions">
+              <button id="backup-export" class="btn btn-outline-success" type="button">تصدير البيانات</button>
+              <button id="backup-import-trigger" class="btn btn-outline-secondary" type="button">استيراد نسخة</button>
+              <input id="backup-import-file" class="visually-hidden" type="file" accept="application/json,.json">
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="feedback-modal" tabindex="-1" aria-labelledby="feedback-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content feedback-modal-content">
+        <div class="modal-header">
+          <div>
+            <p class="section-kicker mb-1">رأيك يساهم في التطوير</p>
+            <h2 id="feedback-modal-title" class="modal-title h5">شاركنا رأيك ومقترحاتك لتطوير زاد</h2>
+          </div>
+          <button id="feedback-modal-close" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body">
+          <form id="feedback-modal-form" class="feedback-modal-form">
+            <label class="settings-control" for="feedback-modal-category">نوع الرسالة
+              <select id="feedback-modal-category" class="form-select" required>
+                <option value="suggestion">اقتراح</option>
+                <option value="note">ملاحظة</option>
+                <option value="complaint">شكوى</option>
+              </select>
+            </label>
+            <label class="settings-control" for="feedback-modal-message">رسالتك
+              <textarea id="feedback-modal-message" class="form-control" rows="5" maxlength="2000" required placeholder="اكتب اقتراحك أو ملاحظتك هنا..."></textarea>
+            </label>
+            <button id="feedback-modal-submit" class="btn btn-success w-100" type="submit">إرسال للمراجعة</button>
+            <p id="feedback-modal-status" class="feedback-modal-status" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="support-modal" tabindex="-1" aria-labelledby="support-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content settings-modal-content">
+          <div class="modal-header">
+            <div>
+              <p class="section-kicker mb-1">مساهمة آمنة</p>
+              <h2 id="support-title" class="modal-title h5">ساهم في تطوير وتوسيع زاد</h2>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+          </div>
+          <div class="modal-body">
+            <p class="settings-note">ستُستكمل عملية الدفع على صفحة Paymob الآمنة، أو عبر رابط InstaPay الرسمي. لا تدخل رقم بطاقة أو رمز CVV أو بيانات حساب بنكي داخل هذا التطبيق؛ تُدار تسوية Paymob من حساب التاجر لدى المزود.</p>
+            <form id="support-payment-form" class="support-payment-form">
+              <label class="settings-control" for="support-amount">مبلغ الدعم (جنيه مصري)
+                <select id="support-amount" class="form-select" required>
+                  <option value="50">٥٠ ج.م</option>
+                  <option value="100">١٠٠ ج.م</option>
+                  <option value="250">٢٥٠ ج.م</option>
+                  <option value="500">٥٠٠ ج.م</option>
+                </select>
+              </label>
+              <label class="settings-control" for="support-method">وسيلة الدفع
+                <select id="support-method" class="form-select" required>
+                  <option value="card">بطاقة ائتمان / خصم عبر Paymob</option>
+                  <option value="vodafone_cash">Vodafone Cash عبر Paymob</option>
+                  <option value="etisalat_cash">Etisalat Cash عبر Paymob</option>
+                  <option value="orange_cash">Orange Cash عبر Paymob</option>
+                  <option value="instapay">InstaPay (رابط التحصيل الرسمي)</option>
+                </select>
+              </label>
+              <label class="settings-control" for="support-name">الاسم
+                <input id="support-name" class="form-control" type="text" maxlength="120" autocomplete="name" required>
+              </label>
+              <label class="settings-control" for="support-email">البريد الإلكتروني
+                <input id="support-email" class="form-control" type="email" maxlength="254" autocomplete="email" required>
+              </label>
+              <label id="support-phone-field" class="settings-control" for="support-phone">رقم الهاتف للدفع
+                <input id="support-phone" class="form-control" type="tel" maxlength="24" inputmode="tel" autocomplete="tel" pattern="\+?[0-9]{8,15}" title="أدخل رقم هاتف من 8 إلى 15 رقماً، ويمكن أن يبدأ بعلامة +">
+              </label>
+              <p id="support-payment-note" class="settings-note">لن تُخزّن بيانات الدفع على هذا الجهاز.</p>
+              <button id="support-payment-submit" class="btn btn-success w-100" type="submit">المتابعة إلى الدفع الآمن</button>
+              <p id="support-payment-status" class="settings-note" role="status" aria-live="polite"></p>
+            </form>
+            <p class="settings-note mt-3">إعداد مفاتيح التاجر ومعرّفات تكامل Paymob ورابط InstaPay الرسمي يتم على الخادم فقط، ولا تُعرض مفاتيح سرية في الواجهة.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="onboarding-tour" class="onboarding-tour" hidden aria-hidden="true">
+      <div class="tour-shade tour-shade-top" aria-hidden="true"></div>
+      <div class="tour-shade tour-shade-bottom" aria-hidden="true"></div>
+      <div class="tour-shade tour-shade-start" aria-hidden="true"></div>
+      <div class="tour-shade tour-shade-end" aria-hidden="true"></div>
+      <section class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-description" tabindex="-1">
+        <div class="tour-card-heading">
+          <p id="tour-step-count" class="section-kicker mb-1">الخطوة ١ من ٤</p>
+          <button id="tour-close" class="tour-close" type="button" aria-label="إغلاق دليل الاستخدام">×</button>
+        </div>
+        <h2 id="tour-title" class="h5"></h2>
+        <p id="tour-description" class="tour-description"></p>
+        <div class="tour-actions">
+          <button id="tour-back" class="btn btn-outline-secondary" type="button">السابق</button>
+          <button id="tour-next" class="btn btn-success" type="button">التالي</button>
+        </div>
+      </section>
+    </div>
+
+    <aside id="support-prompt" class="support-prompt" role="region" aria-labelledby="support-prompt-title" aria-live="polite" hidden>
+      <div class="support-prompt-copy">
+        <strong id="support-prompt-title">ساهم معنا في تطوير الخير واستمرار زاد</strong>
+        <span>بدعمك نواصل تقديم القرآن والأذكار للجميع.</span>
+      </div>
+      <div class="support-prompt-actions">
+        <button id="support-prompt-open" class="btn btn-sm btn-success" type="button">ادعم زاد</button>
+        <button id="closeBtn" class="support-prompt-close" type="button" aria-label="إغلاق">إغلاق</button>
+      </div>
+    </aside>
+
+      <nav class="mobile-bottom-nav" aria-label="التنقل السريع">
+    <button type="button" data-tab-target="#quran-panel" class="mobile-nav-item active" aria-label="القرآن">
+      <span aria-hidden="true">۞</span>
+      <small>القرآن</small>
+    </button>
+    <button type="button" data-tab-target="#azkar-panel" class="mobile-nav-item" aria-label="الأذكار">
+      <span aria-hidden="true">✧</span>
+      <small>الأذكار</small>
+    </button>
+    <button type="button" data-tab-target="#tasbeeh-panel" class="mobile-nav-item" aria-label="المسبحة">
+      <span aria-hidden="true">◉</span>
+      <small>المسبحة</small>
+    </button>
+    <button type="button" data-tab-target="#duas-panel" class="mobile-nav-item" aria-label="الأدعية">
+      <span aria-hidden="true">♡</span>
+      <small>الأدعية</small>
+    </button>
+    <button type="button" data-bs-toggle="modal" data-bs-target="#settings-modal" class="mobile-nav-item" aria-label="الإعدادات">
+      <span aria-hidden="true">⚙</span>
+      <small>الإعدادات</small>
+    </button>
+    <button type="button" data-bs-toggle="modal" data-bs-target="#developer-modal" class="mobile-nav-item developer-mobile-item" aria-label="عن المطور">
+      <span aria-hidden="true">✦</span>
+      <small>المطور</small>
+    </button>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="main.js?v=20261013"></script>
+</body>
+</html>

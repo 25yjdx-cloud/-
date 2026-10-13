@@ -1,0 +1,22 @@
+{
+  "name": "zad-quran-azkar",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "icons:generate": "node scripts/generate-icons.mjs",
+    "build": "npm run icons:generate && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "javascript-obfuscator": "^4.1.1",
+    "sharp": "^0.35.5",
+    "vite": "^6.4.1"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  }
+}
