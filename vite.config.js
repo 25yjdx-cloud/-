@@ -1,4 +1,4 @@
-import { cp, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import JavaScriptObfuscator from 'javascript-obfuscator';
@@ -35,11 +35,6 @@ function obfuscateProductionAssets() {
         'data.json',
         'duas.json',
         'manifest.json',
-        'manifest-default.json',
-        'manifest-fallback.json',
-        'manifest-ramadan.json',
-        'manifest-fitr.json',
-        'manifest-adha.json',
         'quran-text.json',
       ];
       if (!isGithubPagesBuild) {
@@ -57,16 +52,16 @@ function obfuscateProductionAssets() {
         path.join(projectRoot, name),
         path.join(outputRoot, name),
       )));
+      await mkdir(path.join(outputRoot, 'assets', 'icons'), { recursive: true });
       await cp(
-        path.join(projectRoot, 'src', 'assets', 'icons'),
-        path.join(outputRoot, 'assets', 'icons'),
-        { recursive: true },
+        path.join(projectRoot, 'public', 'assets', 'icons', 'icon-192x192.png'),
+        path.join(outputRoot, 'assets', 'icons', 'icon-192x192.png'),
       );
       const htmlPath = path.join(outputRoot, 'index.html');
       const html = await readFile(htmlPath, 'utf8');
       await writeFile(
         htmlPath,
-        html.replace(/href="[^"]*manifest-[^"]+\.json"/, 'href="./manifest.json"'),
+        html.replace(/(<link rel="manifest" href=")[^"]+(")/, '$1./manifest.json$2'),
       );
     },
   };
@@ -74,6 +69,7 @@ function obfuscateProductionAssets() {
 
 export default defineConfig({
   base: './',
+  publicDir: false,
   plugins: [react(), obfuscateProductionAssets()],
   define: {
     __GITHUB_PAGES__: JSON.stringify(isGithubPagesBuild),
