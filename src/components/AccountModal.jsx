@@ -110,7 +110,7 @@ export default function AccountModal() {
     }
 
     async function loadAccount() {
-      if (import.meta.env.DEV) {
+      if (import.meta.env.DEV || __GITHUB_PAGES__) {
         enableLocalMode();
         return;
       }

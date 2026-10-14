@@ -27,6 +27,9 @@ function getRequestState(key, now) {
 }
 
 export async function fetchApp(path, init = {}) {
+  if (__GITHUB_PAGES__ && /\.php(?:$|\?)/.test(path)) {
+    throw new Error('Backend endpoints are unavailable on static GitHub Pages hosting.');
+  }
   const resourceUrl = appUrl(path);
   const method = (init.method || 'GET').toUpperCase();
   if (!/^(GET|HEAD|POST|PUT|PATCH|DELETE)$/.test(method)) {

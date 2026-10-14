@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "icons:generate": "node scripts/generate-icons.mjs",
-    "build": "npm run icons:generate && vite build",
+    "build": "npm run icons:generate && node scripts/build-pages.mjs",
+    "build:pages": "npm run build",
     "preview": "vite preview"
   },
   "devDependencies": {

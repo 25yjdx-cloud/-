@@ -7,6 +7,7 @@ import react from '@vitejs/plugin-react';
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const outputRoot = path.join(projectRoot, 'dist');
+const isGithubPagesBuild = process.env.GITHUB_PAGES === 'true';
 
 function obfuscateProductionAssets() {
   return {
@@ -41,7 +42,7 @@ function obfuscateProductionAssets() {
         'manifest-adha.json',
         'quran-text.json',
       ];
-      if (process.env.GITHUB_PAGES !== 'true') {
+      if (!isGithubPagesBuild) {
         runtimeFiles.push(
           'api.php',
           'auth.php',
@@ -74,6 +75,9 @@ function obfuscateProductionAssets() {
 export default defineConfig({
   base: './',
   plugins: [react(), obfuscateProductionAssets()],
+  define: {
+    __GITHUB_PAGES__: JSON.stringify(isGithubPagesBuild),
+  },
   esbuild: {
     drop: ['debugger'],
     pure: ['console.log', 'console.debug'],

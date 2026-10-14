@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Zad Content Script Helper",
+  "version": "1.0.0",
+  "description": "Content-script scaffold with a child visibility helper.",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["ui-utils.js", "ch-content-script-dend.js"]
+    }
+  ]
+}
