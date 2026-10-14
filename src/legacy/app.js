@@ -969,6 +969,34 @@ if (notesField) {
   });
 }
 
+async function sendFeedback(category, message, form) {
+  const requestId = form.dataset.requestId || window.crypto.randomUUID();
+  form.dataset.requestId = requestId;
+  const response = await fetchApp('api/feedback', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      category,
+      message,
+      requestId,
+    }),
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error('تعذر قراءة استجابة الخادم. حاول مرة أخرى لاحقاً.');
+  }
+  if (!response.ok || result.success !== true) {
+    throw new Error('تعذر إرسال الرسالة حالياً.');
+  }
+}
+
 const feedbackForm = document.querySelector('#feedback-form');
 if (feedbackForm && notesField) {
   feedbackForm.addEventListener('submit', async (event) => {
@@ -994,33 +1022,13 @@ if (feedbackForm && notesField) {
     submitButton.textContent = 'جارٍ إرسال الرسالة...';
     status.textContent = '';
     try {
-      const response = await fetchApp('feedback.php', {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          category,
-          message,
-        }),
-        credentials: 'same-origin',
-        cache: 'no-store',
-      });
-      let result;
-      try {
-        result = await response.json();
-      } catch {
-        throw new Error('تعذر قراءة استجابة الخادم. بقيت الرسالة محفوظة كمسودة على هذا الجهاز.');
-      }
-      if (!response.ok || result.success !== true) {
-        throw new Error('تعذر حفظ الرسالة في الوقت الحالي.');
-      }
+      await sendFeedback(category, message, feedbackForm);
 
       notesField.value = '';
       userNotes = '';
       writeStorage(STORAGE_KEYS.notes, '');
-      status.textContent = 'تم استلام رسالتك بنجاح، شكراً لمساعدتنا على التطوير.';
+      delete feedbackForm.dataset.requestId;
+      status.textContent = 'تم إرسال ملاحظتك بنجاح، شكراً لمشاركتك!';
     } catch (error) {
       status.textContent = 'تعذر الاتصال بالخادم. بقيت الرسالة محفوظة كمسودة على هذا الجهاز.';
     } finally {
@@ -1542,32 +1550,12 @@ feedbackModalForm.addEventListener('submit', async (event) => {
   feedbackModalStatus.className = 'feedback-modal-status';
   feedbackModalStatus.textContent = '';
   try {
-    const response = await fetchApp('feedback.php', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        category,
-        message,
-      }),
-      credentials: 'same-origin',
-      cache: 'no-store',
-    });
-    let result;
-    try {
-      result = await response.json();
-    } catch {
-      throw new Error('تعذر قراءة استجابة الخادم. حاول مرة أخرى لاحقاً.');
-    }
-    if (!response.ok || result.success !== true) {
-      throw new Error('تعذر إرسال الرسالة حالياً.');
-    }
+    await sendFeedback(category, message, feedbackModalForm);
 
     feedbackModalForm.reset();
+    delete feedbackModalForm.dataset.requestId;
     feedbackModalStatus.classList.add('is-success');
-    feedbackModalStatus.textContent = 'شكراً لك، تم إرسال مقترحك بنجاح';
+    feedbackModalStatus.textContent = 'تم إرسال ملاحظتك بنجاح، شكراً لمشاركتك!';
   } catch (error) {
     feedbackModalStatus.classList.add('is-error');
     feedbackModalStatus.textContent = 'تعذر الاتصال بالخادم. حاول مرة أخرى لاحقاً.';

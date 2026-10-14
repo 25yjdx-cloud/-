@@ -118,7 +118,23 @@ AUTH_DATA_DIR=/var/lib/zad/auth
 
 ### تعليقات المستخدمين
 
-يرسل نموذج الملاحظات والاقتراحات JSON إلى `feedback.php`. يتطلب endpoint إعداد `APP_ORIGIN` نفسه المستخدم لبدء الدفع، ويرفض الطلبات العابرة للمواقع، ويحدّ الإرسال إلى 5 رسائل لكل عنوان IP كل 5 دقائق. يخزن الرسائل النصية والفئة ووقت الاستلام في ملف JSON مع قفل للكتابة وحد أقصى 5000 رسالة؛ لا تُجمع عناوين البريد أو بيانات الدفع مع التعليق. في الإنتاج اضبط `FEEDBACK_STORAGE_DIR` إلى مسار مطلق قابل للكتابة خارج جذر الويب، مثل `/var/lib/zad/feedback`، وامنح حساب PHP وحده صلاحية الوصول. يرفض endpoint مسار التخزين داخل `DOCUMENT_ROOT`، ولا يضمّن بناء Vite قاعدة التعليقات ضمن `dist/`. يسمح خادم PHP المحلي المدمج فقط بمسار `database/` للتطوير. راجع الرسائل من الخادم مباشرةً، ولا تعرضها في HTML دون ترميز آمن.
+في نشر Vercel، ترسل نافذتا الملاحظات الطلبات إلى `api/feedback.js` على النطاق نفسه. تتحقق الوظيفة من المصدر والحقول، ثم تمرر الطلب إلى Google Apps Script؛ ويسجل Apps Script الرسالة ووقتها ونوعها في تبويب `Feedback` في Google Sheet، ويرسل إشعاراً نصياً إلى `25yjdx@gmail.com`. لا تُضمّن بيانات اعتماد Google أو سر webhook في ملفات المتصفح.
+
+لإعداد التكامل:
+
+1. أنشئ Google Sheet في الحساب المستلم، وافتح **Extensions → Apps Script**، وانسخ محتوى `google-apps-script/feedback.gs` إلى المشروع واحفظه.
+2. من **Project Settings → Script Properties** أضف `FEEDBACK_SPREADSHEET_ID` (معرّف جدول البيانات من رابطه) و`FEEDBACK_WEBHOOK_SECRET` (قيمة عشوائية طويلة تُنشأ محلياً).
+3. شغّل `authorizeFeedbackIntegrations` من محرر Apps Script ووافق على صلاحيات البريد وجدول البيانات، ثم انشر Apps Script كـ **Web app** مع **Execute as: Me** و**Who has access: Anyone**. انسخ رابط النشر المنتهي بـ `/exec`.
+4. في إعدادات مشروع Vercel، أضف `ZAD_FEEDBACK_SCRIPT_URL` (رابط `/exec`) و`ZAD_FEEDBACK_WEBHOOK_SECRET` (نفس السر من Script Properties) لكل بيئة مطلوبة. أنشئ السر محلياً مثلاً باستخدام `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`؛ لا تضفه إلى Git أو تضعه في متغير يبدأ بـ `VITE_`.
+5. انشر التطبيق على Vercel بعد حفظ المتغيرات، ثم أرسل رسالة تجريبية وتحقق من البريد والصف في `Feedback`. لإرسال تغييرات الشيفرة:
+
+   ```sh
+   git add api/feedback.js google-apps-script/feedback.gs src/legacy/app.js .env.example README.md
+   git commit -m "Connect feedback to Google Sheets and email"
+   git push origin main
+   ```
+
+يعيد Apps Script رفض الطلبات المكررة بأمان باستخدام معرّف الإرسال، ويحد الإرسال إلى 5 رسائل لكل عنوان IP كل 5 دقائق دون حفظ عنوان IP في الجدول. يبقى `feedback.php` كما هو لاستخدامات استضافة PHP السابقة؛ لا تستخدم نموذج Vercel على GitHub Pages لأن Pages لا يشغّل وظائف `/api/*`.
 
 ### أيقونات التطبيق الموسمية
 
@@ -126,7 +142,7 @@ AUTH_DATA_DIR=/var/lib/zad/auth
 
 ## GitHub Pages Deployment
 
-GitHub Pages hosts static files only. It cannot run PHP, so the frontend and its `data.json` fallback can be published there, but PHP endpoints such as `api.php`, `feedback.php`, `create-payment.php`, and `paymob-webhook.php` will not execute. Feedback therefore cannot be stored, and payments will not work, on a Pages-only deployment. The current forms call their PHP endpoints on the same origin.
+GitHub Pages hosts static files only. It cannot run PHP or Vercel `/api/*` functions, so the frontend and its `data.json` fallback can be published there, but the feedback endpoint, PHP endpoints such as `api.php`, `create-payment.php`, and `paymob-webhook.php` will not execute. Feedback and payments therefore require their configured backend on Vercel/PHP hosting; they will not work on a Pages-only deployment.
 
 This repository uses `.github/workflows/deploy-pages.yml` and publishes the compiled `dist/` artifact with GitHub Actions. In **Settings → Pages**, set the source to **GitHub Actions**. Do not select the repository root or deploy raw `src/` files; Vite must compile the JSX before the browser serves the app. The Vite `base: './'` setting and relative manifest/icon paths support project-site subpaths.
 
