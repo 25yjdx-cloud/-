@@ -22,7 +22,18 @@ npm run build
 
 ### النشر على GitHub Pages
 
-ينشر سير العمل في `.github/workflows/deploy-pages.yml` الواجهة والملفات الثابتة تلقائياً عند الدفع إلى `main` أو يدوياً من تبويب Actions. فعّل GitHub Pages من إعدادات المستودع مع مصدر النشر **GitHub Actions**. بناء Pages يستبعد ملفات PHP حتى لا ينشر مصدر الخادم؛ وبما أن Pages لا يشغّل PHP، فإن تسجيل الدخول، الملاحظات، الدفع وأي طلب يعتمد على واجهة PHP لن يتوفر هناك. استخدم استضافة تدعم PHP إذا كانت هذه الميزات مطلوبة.
+ينشر سير العمل في `.github/workflows/deploy-pages.yml` ناتج Vite من `dist/` تلقائياً عند الدفع إلى `main` أو يدوياً من تبويب Actions. فعّل GitHub Pages من إعدادات المستودع مع مصدر النشر **GitHub Actions**؛ لا تنشر جذر المستودع أو مجلد `src/` لأن ذلك يقدّم JSX الخام إلى المتصفح. للتحقق والنشر من PowerShell:
+
+```powershell
+npm ci
+npm run build:pages
+git status --short
+git add README.md vite.config.js
+git commit -m "Fix GitHub Pages production assets"
+git push origin HEAD:main
+```
+
+بعد نجاح الدفع، انتظر اكتمال سير العمل `Deploy static UI to GitHub Pages` في تبويب Actions. بناء Pages يجمع JavaScript عبر Vite، ويضمّن المسارات النسبية للملفات، وينسخ manifest وأيقونات `public/assets/icons/` إلى `dist/`، ويستبعد ملفات PHP حتى لا ينشر مصدر الخادم. وبما أن Pages لا يشغّل PHP، فإن تسجيل الدخول والملاحظات والدفع وأي طلب يعتمد على واجهة PHP لن يتوفر هناك. استخدم استضافة تدعم PHP إذا كانت هذه الميزات مطلوبة.
 
 التصغير والتشويش يرفعان كلفة القراءة السريعة فقط، ولا يحميان الأسرار أو يمنعان الهندسة العكسية. لا تضع مفاتيح API أو رموزاً سرية أو بيانات اعتماد في JavaScript أو التخزين المحلي. لا يعطّل التطبيق قائمة النقر الأيمن أو اختصارات أدوات المطور، لأن ذلك لا يوفّر حماية فعلية ويضر بإمكانية الوصول. تبقى محددات المعدل على الخادم هي الحماية الفعلية؛ ويضيف المتصفح تأخيراً قصيراً لطلبات البحث ومهلة بين إرسال النماذج لتقليل الطلبات المكررة.
 
@@ -117,10 +128,20 @@ AUTH_DATA_DIR=/var/lib/zad/auth
 
 GitHub Pages hosts static files only. It cannot run PHP, so the frontend and its `data.json` fallback can be published there, but PHP endpoints such as `api.php`, `feedback.php`, `create-payment.php`, and `paymob-webhook.php` will not execute. Feedback therefore cannot be stored, and payments will not work, on a Pages-only deployment. The current forms call their PHP endpoints on the same origin.
 
-1. Push the project files (including `index.html`, `app.js`, `style.css`, `data.json`, and `duas.json`) to a GitHub repository. Do not publish real API keys, bot tokens, private configuration, or payment secrets.
-2. In the repository, open **Settings → Pages**. Under **Build and deployment**, select **Deploy from a branch**, choose `main` and `/(root)` (or the branch/folder containing `index.html`), then save.
-3. Wait for the Pages deployment workflow to complete. Open the URL shown in **Settings → Pages** and verify the Quran, data fallback, and Duas load. For a project site, the URL is usually `https://<owner>.github.io/<repository>/`.
-4. Use relative asset and data URLs so the app works under the repository subpath. A custom domain is optional; enable HTTPS in Pages settings if using one.
+This repository uses `.github/workflows/deploy-pages.yml` and publishes the compiled `dist/` artifact with GitHub Actions. In **Settings → Pages**, set the source to **GitHub Actions**. Do not select the repository root or deploy raw `src/` files; Vite must compile the JSX before the browser serves the app. The Vite `base: './'` setting and relative manifest/icon paths support project-site subpaths.
+
+From PowerShell, build and publish a change with:
+
+```powershell
+npm ci
+npm run build:pages
+git status --short
+git add README.md vite.config.js
+git commit -m "Fix GitHub Pages production assets"
+git push origin HEAD:main
+```
+
+The push starts the Pages workflow; wait for `Deploy static UI to GitHub Pages` to finish, then open the URL shown in **Settings → Pages**. For a project site, the URL is usually `https://<owner>.github.io/<repository>/`. Do not publish real API keys, bot tokens, private configuration, or payment secrets.
 
 Pages does not apply this project's PHP security headers or Apache `.htaccess` rules. For live payments, deploy the PHP backend on an HTTPS server and route the frontend's payment/API requests to it through a same-origin reverse proxy, or deliberately update the frontend to use a separately hosted API with narrowly scoped CORS and CSRF protections. A separate backend URL alone will not work with the current relative `create-payment.php` request. Do not weaken origin checks or put server credentials in frontend code to make it work.
 

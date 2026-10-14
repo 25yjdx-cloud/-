@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import JavaScriptObfuscator from 'javascript-obfuscator';
@@ -52,10 +52,10 @@ function obfuscateProductionAssets() {
         path.join(projectRoot, name),
         path.join(outputRoot, name),
       )));
-      await mkdir(path.join(outputRoot, 'assets', 'icons'), { recursive: true });
       await cp(
-        path.join(projectRoot, 'public', 'assets', 'icons', 'icon-192x192.png'),
-        path.join(outputRoot, 'assets', 'icons', 'icon-192x192.png'),
+        path.join(projectRoot, 'public', 'assets', 'icons'),
+        path.join(outputRoot, 'assets', 'icons'),
+        { recursive: true },
       );
       const htmlPath = path.join(outputRoot, 'index.html');
       const html = await readFile(htmlPath, 'utf8');
