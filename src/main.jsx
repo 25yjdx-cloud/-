@@ -1,5 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { Analytics } from '@vercel/analytics/react';
 import App from './components/App.jsx';
 import './styles/app.css';
 
@@ -9,5 +10,6 @@ if (!rootElement) throw new Error('Application root element was not found.');
 createRoot(rootElement).render(
   <React.StrictMode>
     <App />
+    <Analytics />
   </React.StrictMode>,
 );
