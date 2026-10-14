@@ -1,0 +1,16 @@
+{
+  "morning": {
+    "title": "أذكار الصباح",
+    "type": "local",
+    "path": "audio/adhkar-morning.mp3",
+    "url": "",
+    "enabled": false
+  },
+  "evening": {
+    "title": "أذكار المساء",
+    "type": "local",
+    "path": "audio/adhkar-evening.mp3",
+    "url": "",
+    "enabled": false
+  }
+}

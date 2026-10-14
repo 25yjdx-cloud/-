@@ -36,7 +36,20 @@ export async function fetchApp(path, init = {}) {
     throw new TypeError('Unsupported application request method.');
   }
   if (init.body !== undefined) {
-    if (typeof init.body !== 'string' || new TextEncoder().encode(init.body).byteLength > MAX_REQUEST_BODY_BYTES) {
+    if (typeof init.body === 'string') {
+      if (new TextEncoder().encode(init.body).byteLength > MAX_REQUEST_BODY_BYTES) {
+        throw new TypeError('Application request payload is invalid or too large.');
+      }
+    } else if (init.body instanceof FormData) {
+      const entries = [...init.body.entries()];
+      if (entries.length > 4 || entries.some(([name, value]) => {
+        if (!['transactionId', 'receipt'].includes(name)) return true;
+        if (typeof value === 'string') return value.length > 120;
+        return !(value instanceof File) || value.size > 2 * 1024 * 1024;
+      })) {
+        throw new TypeError('Application form payload is invalid or too large.');
+      }
+    } else {
       throw new TypeError('Application request payload is invalid or too large.');
     }
   }

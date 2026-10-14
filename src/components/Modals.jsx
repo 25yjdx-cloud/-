@@ -7,6 +7,9 @@ const modalSelectors = [
   '#bookmarks-modal',
   '#feedback-modal',
   '#support-modal',
+  '#telegram-promo-modal',
+  '#telegram-success-modal',
+  '#memorization-modal',
 ];
 
 export default function Modals() {

@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import httpx
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, ApplicationBuilder, CommandHandler, ContextTypes
 
@@ -121,6 +122,11 @@ def normalize_record(value):
         }}
     record.setdefault("vip_until", None)
     record.setdefault("expiration_notified", False)
+    record.setdefault("linked_vip_active", False)
+    record.setdefault("linked_vip_checked_at", None)
+    record.setdefault("linked_vip_plan", None)
+    record.setdefault("linked_vip_expires_at", None)
+    record.setdefault("google_account_linked", False)
     return record
 
 
@@ -134,6 +140,9 @@ def get_record(records, chat_id, start_trial=False):
 
 def access_status(record, now=None):
     now = now or utc_now()
+    linked_check = parse_datetime(record.get("linked_vip_checked_at"))
+    if record.get("linked_vip_active") is True and linked_check and now - linked_check <= timedelta(hours=1):
+        return "vip", parse_datetime(record.get("linked_vip_expires_at"))
     vip_until = parse_datetime(record.get("vip_until"))
     if vip_until and vip_until > now:
         return "vip", vip_until
@@ -150,9 +159,80 @@ def subscription_keyboard():
     return None
 
 
+def telegram_auth_url(action):
+    auth_url = os.getenv("TELEGRAM_AUTH_API_URL", "").strip()
+    parsed = urlparse(auth_url)
+    if (parsed.scheme != "https" or not parsed.netloc or parsed.path.rstrip("/").split("/")[-1] != "auth.php"
+            or parsed.username or parsed.password or parsed.query or parsed.fragment):
+        return None
+    if action not in {"telegram-bot-link", "telegram-bot-status"}:
+        raise ValueError("Unsupported Telegram account API action.")
+    return f"{auth_url}?action={action}"
+
+
+def telegram_api_headers():
+    secret = os.getenv("TELEGRAM_BOT_API_SECRET", "")
+    if len(secret) < 32:
+        return None
+    return {"Authorization": f"Bearer {secret}", "Accept": "application/json"}
+
+
+async def link_google_account(token, chat_id):
+    url = telegram_auth_url("telegram-bot-link")
+    headers = telegram_api_headers()
+    if url is None or headers is None:
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=8) as client:
+            response = await client.post(
+                url,
+                headers=headers,
+                json={"token": token, "chatId": str(chat_id)},
+            )
+    except (httpx.HTTPError, ValueError):
+        LOGGER.exception("Could not link Telegram chat %s to its Google account.", chat_id)
+        return False
+    try:
+        payload = response.json()
+    except ValueError:
+        return False
+    return response.is_success and isinstance(payload, dict) and payload.get("linked") is True
+
+
+async def refresh_google_vip(chat_id, record):
+    url = telegram_auth_url("telegram-bot-status")
+    headers = telegram_api_headers()
+    if url is None or headers is None:
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=8) as client:
+            response = await client.get(url, headers=headers, params={"chat_id": str(chat_id)})
+        if not response.is_success:
+            return False
+        payload = response.json()
+    except (httpx.HTTPError, ValueError):
+        LOGGER.exception("Could not refresh linked Telegram VIP status for chat %s.", chat_id)
+        return False
+    if (not isinstance(payload, dict) or not isinstance(payload.get("active"), bool)
+            or (payload["active"] and not isinstance(payload.get("plan"), str))
+            or (payload.get("expiresAt") is not None and not isinstance(payload.get("expiresAt"), str))):
+        LOGGER.error("Telegram VIP status response was invalid for chat %s.", chat_id)
+        return False
+    record["linked_vip_active"] = payload["active"]
+    record["linked_vip_checked_at"] = utc_now().isoformat()
+    record["linked_vip_plan"] = payload.get("plan")
+    record["linked_vip_expires_at"] = payload.get("expiresAt")
+    return True
+
+
 def access_message(record):
     status, expires_at = access_status(record)
     if status == "vip":
+        if (record.get("linked_vip_active") is True
+                and record.get("linked_vip_plan") == "telegram_lifetime"):
+            return "اشتراك Telegram مدى الحياة مفعّل لحسابك."
+        if expires_at is None:
+            return "اشتراك VIP مفعّل."
         return f"اشتراك VIP مفعّل حتى {expires_at:%Y-%m-%d %H:%M UTC}."
     message = (
         "تذكيرات زاد الآلية تتطلب اشتراك VIP.\n"
@@ -164,7 +244,6 @@ def access_message(record):
 
 
 async def send_access_prompt(message, record):
-    del record
     text = access_message(record)
     await message.reply_text(text, reply_markup=subscription_keyboard())
 
@@ -178,17 +257,34 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     records = read_reminders()
     record = get_record(records, update.effective_chat.id)
-    write_reminders(records)
+    if context.args and context.args[0].startswith("link_"):
+        token = context.args[0][5:]
+        if not 40 <= len(token) <= 48 or not all(
+                character.isascii() and (character.isalnum() or character in "_-")
+                for character in token):
+            await update.message.reply_text("رابط الربط غير صالح أو منتهي. أنشئ رابطاً جديداً من ملفك في زاد.")
+            return
+        if not await link_google_account(token, update.effective_chat.id):
+            await update.message.reply_text("تعذر ربط الحساب. قد يكون الرابط منتهياً أو مستخدماً؛ أنشئ رابطاً جديداً من زاد.")
+            return
+        record["linked_vip_active"] = False
+        record["linked_vip_checked_at"] = None
+        record["google_account_linked"] = True
+        write_reminders(records)
+        await update.message.reply_text("تم ربط حساب Google ببوت زاد بنجاح. يمكنك الآن إكمال الاشتراك من صفحة زاد.")
+    await refresh_access(update.effective_chat.id, record)
     status, _ = access_status(record)
+    write_reminders(records)
     if status == "expired":
         await send_access_prompt(update.message, record)
         return
 
-    if context.args and context.args[0].lower() == "subscribe":
-        await send_access_prompt(update.message, record)
+    if status == "vip":
+        await update.message.reply_text(access_message(record))
+        restore_chat_reminders(context.application, update.effective_chat.id, record)
         return
 
-    await update.message.reply_text("أهلاً بك في بوت زاد 🌿\nيمكنك استخدام التذكيرات المتاحة بعد تفعيل اشتراك VIP.")
+    await update.message.reply_text("أهلاً بك في بوت زاد 🌿")
     await send_access_prompt(update.message, record)
 
 
@@ -278,6 +374,20 @@ def schedule_reminder(application, chat_id, topic, setting):
     )
 
 
+def restore_chat_reminders(application, chat_id, record):
+    for topic, setting in record["reminders"].items():
+        try:
+            schedule_reminder(application, chat_id, topic, setting)
+        except (RuntimeError, ValueError, ZoneInfoNotFoundError):
+            LOGGER.exception("Could not restore reminder for linked chat %s.", chat_id)
+
+
+async def refresh_access(chat_id, record):
+    if record.get("google_account_linked") is True:
+        await refresh_google_vip(chat_id, record)
+    return access_status(record)
+
+
 async def send_reminder(context: ContextTypes.DEFAULT_TYPE):
     job = context.job
     if job is None or job.chat_id is None:
@@ -290,7 +400,8 @@ async def send_reminder(context: ContextTypes.DEFAULT_TYPE):
 
     records = read_reminders()
     record = get_record(records, chat_id)
-    if access_status(record)[0] == "expired":
+    access, _ = await refresh_access(chat_id, record)
+    if access == "expired":
         for active_topic in record["reminders"]:
             remove_reminder_jobs(context.application, chat_id, active_topic)
         record["reminders"].clear()
@@ -320,6 +431,7 @@ async def reminder_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     record = get_record(records, chat_id)
     args = context.args
     if not args:
+        await refresh_access(chat_id, record)
         await send_access_prompt(update.message, record)
         await update.message.reply_text(
             "الإعداد: /remind 25m quran أو /remind 07:00 morning.\n"
@@ -351,7 +463,7 @@ async def reminder_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    status, _ = access_status(record)
+    status, _ = await refresh_access(chat_id, record)
     if status == "expired":
         write_reminders(records)
         await send_access_prompt(update.message, record)
@@ -403,6 +515,7 @@ async def vip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     records = read_reminders()
     record = get_record(records, update.effective_chat.id)
+    await refresh_access(update.effective_chat.id, record)
     write_reminders(records)
     await send_access_prompt(update.message, record)
 
@@ -488,6 +601,8 @@ async def restore_reminders(application: Application):
     for chat_id, stored_record in records.items():
         record = normalize_record(stored_record)
         records[chat_id] = record
+        if record["google_account_linked"]:
+            await refresh_google_vip(chat_id, record)
         if access_status(record)[0] == "expired":
             continue
         for topic, setting in record["reminders"].items():
@@ -506,6 +621,43 @@ async def restore_reminders(application: Application):
     write_reminders(records)
 
 
+async def sync_linked_subscriptions(context: ContextTypes.DEFAULT_TYPE):
+    records = read_reminders()
+    changed = False
+    for chat_id, stored_record in records.items():
+        record = normalize_record(stored_record)
+        if not record["google_account_linked"]:
+            continue
+        previous_active = record["linked_vip_active"] is True
+        if not await refresh_google_vip(chat_id, record):
+            continue
+        active = record["linked_vip_active"] is True
+        if active != previous_active:
+            changed = True
+            record["expiration_notified"] = False
+            if active:
+                restore_chat_reminders(context.application, chat_id, record)
+                activation_message = (
+                    "تم تفعيل اشتراك زاد Telegram مدى الحياة. اضبط تذكيراتك باستخدام /remind."
+                    if record.get("linked_vip_plan") == "telegram_lifetime"
+                    else "تم تفعيل اشتراك VIP لحسابك المرتبط. اضبط تذكيراتك باستخدام /remind."
+                )
+                await context.bot.send_message(
+                    chat_id=int(chat_id),
+                    text=activation_message,
+                )
+            else:
+                for topic in record["reminders"]:
+                    remove_reminder_jobs(context.application, chat_id, topic)
+                await context.bot.send_message(
+                    chat_id=int(chat_id),
+                    text="حالة اشتراك Telegram المرتبط لم تعد نشطة. تحقق من حسابك في زاد.",
+                )
+        records[chat_id] = record
+    if changed:
+        write_reminders(records)
+
+
 def main():
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
     token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -522,6 +674,12 @@ def main():
     application.add_handler(CommandHandler("grantvip", grant_vip_command))
     application.add_handler(CommandHandler("progress", progress_command))
     application.post_init = restore_reminders
+    if (
+        application.job_queue is not None
+        and telegram_auth_url("telegram-bot-status") is not None
+        and telegram_api_headers() is not None
+    ):
+        application.job_queue.run_repeating(sync_linked_subscriptions, interval=60, first=15)
 
     LOGGER.info("Zad Telegram bot started.")
     application.run_polling()

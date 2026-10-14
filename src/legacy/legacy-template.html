@@ -20,27 +20,47 @@
         <span><strong>زاد</strong><small>طمأنينةٌ في يومك</small></span>
       </a>
       <div class="header-actions">
-        <span class="header-date d-none d-md-inline">مساحة للسكينة والذكر</span>
-        <div class="header-icon-bar" aria-label="أدوات التطبيق">
-          <button id="theme-toggle" class="icon-button" type="button" aria-label="تفعيل الوضع الليلي" title="الوضع الليلي">
-            <span aria-hidden="true">◐</span>
-          </button>
-          <button id="account-open" class="icon-button" type="button" data-bs-toggle="modal" data-bs-target="#account-modal" aria-label="الملف الشخصي" title="الملف الشخصي">
-            <span aria-hidden="true">👤</span>
-          </button>
-          <button id="settings-open" class="icon-button" type="button" data-bs-toggle="modal" data-bs-target="#settings-modal" aria-label="الإعدادات والتنبيهات" title="الإعدادات والتنبيهات">
-            <span aria-hidden="true">⚙</span>
-          </button>
-          <button id="onboarding-tour-open" class="icon-button" type="button" aria-label="دليل الاستخدام / كيف تستخدم زاد؟" title="دليل الاستخدام / كيف تستخدم زاد؟">
-            <span aria-hidden="true">💡</span>
-          </button>
-          <button id="feedback-btn" class="icon-button" type="button" aria-label="إرسال الاقتراحات والآراء" title="إرسال الاقتراحات والآراء">
-            <span aria-hidden="true">✉</span>
-          </button>
-        </div>
+        <button id="sidebar-open" class="sidebar-open-button" type="button" aria-controls="app-sidebar" aria-expanded="false" aria-label="فتح القائمة الجانبية">
+          <span aria-hidden="true">☰</span>
+        </button>
+        <button id="header-settings-open" class="header-settings-button" type="button" data-bs-toggle="modal" data-bs-target="#settings-modal" aria-label="فتح الإعدادات" title="الإعدادات">
+          <span aria-hidden="true">⚙</span>
+        </button>
       </div>
     </div>
   </header>
+
+  <aside id="app-sidebar" class="app-sidebar" aria-label="القائمة الرئيسية" aria-hidden="true">
+    <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="إغلاق القائمة" hidden></button>
+    <div class="sidebar-panel">
+      <div class="sidebar-heading">
+        <div>
+          <p class="section-kicker mb-1">زاد</p>
+          <h2>القائمة الرئيسية</h2>
+        </div>
+        <button id="sidebar-close" class="sidebar-close-button" type="button" aria-label="إغلاق القائمة">×</button>
+      </div>
+      <nav class="sidebar-navigation" aria-label="أقسام التطبيق">
+        <button class="sidebar-nav-link is-active" type="button" data-tab-target="#quran-panel"><span aria-hidden="true">۞</span> القرآن الكريم</button>
+        <button class="sidebar-nav-link" type="button" data-tab-target="#azkar-panel"><span aria-hidden="true">✧</span> الأذكار</button>
+        <button class="sidebar-nav-link" type="button" data-tab-target="#tasbeeh-panel"><span aria-hidden="true">◉</span> المسبحة</button>
+        <button class="sidebar-nav-link" type="button" data-tab-target="#duas-panel"><span aria-hidden="true">♡</span> الأدعية</button>
+        <button class="sidebar-nav-link" type="button" data-tab-target="#telegram-panel"><span aria-hidden="true">➤</span> خدمة Telegram</button>
+        <button id="memorization-open" class="sidebar-nav-link" type="button" data-open-memorization><span aria-hidden="true">۞</span> التحفيظ واختبار الحفظ</button>
+        <button class="sidebar-nav-link" type="button" data-tab-target="#accountability-panel"><span aria-hidden="true">✦</span> حاسب نفسك</button>
+      </nav>
+      <div class="sidebar-divider"></div>
+      <nav class="sidebar-navigation" aria-label="أدوات التطبيق">
+        <button id="theme-toggle" class="sidebar-nav-link" type="button" aria-label="تفعيل الوضع الليلي"><span aria-hidden="true">◐</span><span id="theme-toggle-label">الوضع الليلي</span></button>
+        <button id="account-open" class="sidebar-nav-link" type="button" data-bs-toggle="modal" data-bs-target="#account-modal"><span aria-hidden="true">👤</span> الملف الشخصي</button>
+        <button id="settings-open" class="sidebar-nav-link" type="button" data-bs-toggle="modal" data-bs-target="#settings-modal"><span aria-hidden="true">⚙</span> الإعدادات والتنبيهات</button>
+        <button id="onboarding-tour-open" class="sidebar-nav-link" type="button"><span aria-hidden="true">💡</span> دليل الاستخدام</button>
+        <button id="feedback-btn" class="sidebar-nav-link" type="button"><span aria-hidden="true">✉</span> شاركنا رأيك</button>
+        <button class="sidebar-nav-link" type="button" data-bs-toggle="modal" data-bs-target="#developer-modal"><span aria-hidden="true">✦</span> عن المطور</button>
+      </nav>
+      <p id="sidebar-app-version" class="sidebar-app-version">إصدار التطبيق <strong></strong></p>
+    </div>
+  </aside>
 
   <main class="container app-shell">
     <nav class="main-navigation" aria-label="أقسام التطبيق">
@@ -57,6 +77,12 @@
         <button class="nav-link" id="duas-tab" data-bs-toggle="pill" data-bs-target="#duas-panel" type="button" role="tab" aria-controls="duas-panel" aria-selected="false">
           <span aria-hidden="true">♡</span> الأدعية ودعاء الختم
         </button>
+        <button class="nav-link" id="telegram-tab" data-bs-toggle="pill" data-bs-target="#telegram-panel" type="button" role="tab" aria-controls="telegram-panel" aria-selected="false">
+          <span aria-hidden="true">➤</span> خدمة Telegram
+        </button>
+        <button class="nav-link accountability-entry-tab" id="accountability-tab" data-bs-toggle="pill" data-bs-target="#accountability-panel" data-tab-target="#accountability-panel" type="button" role="tab" aria-controls="accountability-panel" aria-selected="false">
+          <span aria-hidden="true">✦</span> حاسب نفسك
+        </button>
       </div>
     </nav>
 
@@ -65,7 +91,7 @@
     <div class="tab-content">
       <section class="tab-pane fade show active" id="quran-panel" role="tabpanel" aria-labelledby="quran-tab" tabindex="0">
         <div class="quran-layout">
-          <aside id="quran-index" class="index-panel offcanvas-lg offcanvas-start" tabindex="-1" aria-labelledby="index-title">
+          <aside id="quran-index" class="index-panel offcanvas-md offcanvas-start" tabindex="-1" aria-labelledby="index-title">
             <div class="offcanvas-header index-header">
               <div>
                 <p class="section-kicker mb-1">تنقّل سريع</p>
@@ -101,6 +127,7 @@
                     <p id="quran-search-status" role="status" aria-live="polite">ابحث في نص الآيات العربية.</p>
                     <div id="quran-search-results" class="quran-search-results" aria-label="نتائج البحث"></div>
                   </section>
+                  <button id="reader-memorization-open" class="tool-button" type="button" data-open-memorization><span aria-hidden="true">۞</span> التحفيظ واختبار الحفظ</button>
                   <button id="open-quran-index" class="tool-button" type="button"><span aria-hidden="true">☷</span> الفهرس</button>
                   <button id="save-bookmark" class="tool-button primary-tool" type="button"><span aria-hidden="true">☆</span> حفظ علامة</button>
                   <button id="go-bookmark" class="tool-button" type="button" disabled><span aria-hidden="true">↗</span> انتقال للعلامة</button>
@@ -173,6 +200,29 @@
             <p class="section-description">اختر قسماً لعرض أذكاره، واضغط على العداد بعد كل مرة.</p>
           </div>
         </div>
+        <section class="adhkar-player" aria-labelledby="adhkar-player-title">
+          <div class="adhkar-player-heading">
+            <div>
+              <p class="section-kicker mb-1">استمع وتابع وردك</p>
+              <h2 id="adhkar-player-title">مشغل الأذكار</h2>
+            </div>
+            <span id="adhkar-player-badge" class="adhkar-player-badge">جاهز لإضافة الصوت</span>
+          </div>
+          <div class="adhkar-track-select" role="group" aria-label="اختيار أذكار للاستماع">
+            <button id="adhkar-track-morning" class="adhkar-track-button is-active" type="button" aria-pressed="true">أذكار الصباح</button>
+            <button id="adhkar-track-evening" class="adhkar-track-button" type="button" aria-pressed="false">أذكار المساء</button>
+          </div>
+          <div class="adhkar-player-controls">
+            <button id="adhkar-play-toggle" class="adhkar-play-button" type="button" aria-label="تشغيل الأذكار" disabled>▶</button>
+            <div class="adhkar-progress-group">
+              <label class="visually-hidden" for="adhkar-progress">موضع التشغيل</label>
+              <input id="adhkar-progress" type="range" min="0" max="0" value="0" step="1" disabled>
+              <div class="adhkar-time-row"><span id="adhkar-current-time">٠:٠٠</span><span id="adhkar-duration">٠:٠٠</span></div>
+            </div>
+          </div>
+          <p id="adhkar-player-status" class="adhkar-player-status" role="status" aria-live="polite"></p>
+          <audio id="adhkar-audio" preload="none" playsinline></audio>
+        </section>
         <div class="daily-progress" aria-label="إنجاز الأذكار اليوم">
           <div class="daily-progress-heading"><strong id="azkar-progress-label">0% مكتمل اليوم</strong><span id="azkar-progress-count">0 من 0</span></div>
           <div class="progress" role="progressbar" aria-label="نسبة إكمال الأذكار" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -247,6 +297,82 @@
           </select>
         </div>
         <div id="duas-list" class="duas-list" aria-live="polite"></div>
+      </section>
+
+      <section class="tab-pane fade" id="telegram-panel" role="tabpanel" aria-labelledby="telegram-tab" tabindex="0">
+        <div class="telegram-service-page">
+          <header class="telegram-service-hero">
+            <span class="telegram-service-icon" aria-hidden="true">➤</span>
+            <p class="section-kicker">زاد معك أينما كنت</p>
+            <h1>خدمة بوت زاد على Telegram</h1>
+            <p>تذكيرات يومية تساعدك على المحافظة على ورد القرآن وأذكار الصباح والمساء، مباشرةً عبر Telegram.</p>
+            <div class="telegram-service-actions">
+              <a id="telegram-open-bot" class="btn btn-success" href="#" target="_blank" rel="noopener noreferrer" hidden>ابدأ مع بوت تليجرام / Start Telegram Bot</a>
+              <a id="telegram-subscribe-bot" class="btn btn-outline-success" href="#" target="_blank" rel="noopener noreferrer" hidden>تفاصيل الاشتراك</a>
+            </div>
+            <p id="telegram-service-status" class="telegram-service-status" role="status">تُضبط روابط البوت من إعدادات النشر.</p>
+          </header>
+          <section class="telegram-lifetime-offer" aria-labelledby="telegram-lifetime-title">
+            <div class="telegram-lifetime-heading">
+              <p class="section-kicker">عرض محدود لخدمة البوت</p>
+              <h2 id="telegram-lifetime-title">اشتراك Telegram مدى الحياة</h2>
+              <p>ورد قرآني يومي، تذكيرات متواصلة بالأذكار، وتحديثات روحانية مخصصة.</p>
+            </div>
+            <div class="telegram-lifetime-price">
+              <del>500 EGP</del>
+              <strong>250 EGP <span lang="ar">/ 250 جنيه مصري مدى الحياة</span></strong>
+            </div>
+            <ul class="telegram-plan-benefits">
+              <li>آيات وورد قرآني يومي.</li>
+              <li>تذكيرات أذكار الصباح والمساء.</li>
+              <li>تحديثات روحانية مخصصة عبر البوت.</li>
+            </ul>
+            <div class="telegram-service-actions">
+              <button class="btn btn-success" type="button" data-open-account>اشترك الآن عبر Paymob</button>
+              <button class="btn btn-outline-success" type="button" data-open-account data-payment-method="instapay">الدفع عبر InstaPay</button>
+            </div>
+            <p class="telegram-service-note">يتطلب التفعيل التلقائي ربط Telegram بحساب Google وتأكيد الدفع من الخادم. InstaPay يتطلب إرسال إثبات للمراجعة.</p>
+          </section>
+          <div class="telegram-feature-grid">
+            <article class="telegram-feature-card">
+              <span aria-hidden="true">☀</span>
+              <h2>أذكار الصباح والمساء</h2>
+              <p>تذكيرات يومية تساعدك على بدء يومك وختامه بالذكر.</p>
+            </article>
+            <article class="telegram-feature-card">
+              <span aria-hidden="true">۞</span>
+              <h2>ورد القرآن الكريم</h2>
+              <p>رسائل تذكير بوردك اليومي لتبقى على صلة بقراءتك.</p>
+            </article>
+            <article class="telegram-feature-card">
+              <span aria-hidden="true">🔒</span>
+              <h2>إعداداتك بيدك</h2>
+              <p>ابدأ من البوت الرسمي واتبع خطواته لمعرفة الإعدادات المتاحة لحسابك.</p>
+            </article>
+          </div>
+          <aside class="telegram-service-note">
+            <strong>طريقة البدء</strong>
+            <ol>
+              <li>افتح بوت زاد الرسمي من الزر أعلاه.</li>
+              <li>اضغط Start واتبع تعليمات إعداد تذكيراتك.</li>
+              <li>تظهر مزايا الاشتراك إن كانت مفعّلة على الخادم.</li>
+            </ol>
+            <p>تتطلب التذكيرات الآلية أن يكون البوت والخادم متاحين، وقد تتطلب بعض المزايا اشتراكاً فعالاً.</p>
+          </aside>
+          <section class="telegram-support-section" aria-labelledby="telegram-support-title">
+            <div class="telegram-support-marquee" aria-hidden="true">
+              <span>شريك النجاح ✦ سهم الأثر البرمجي ✦ كن شريكاً في الأجر والأثر ✦ </span>
+              <span>شريك النجاح ✦ سهم الأثر البرمجي ✦ كن شريكاً في الأجر والأثر ✦ </span>
+            </div>
+            <div class="telegram-support-copy">
+              <p class="section-kicker">شريك النجاح</p>
+              <h2 id="telegram-support-title">كن شريكاً في الأجر والأثر</h2>
+              <p>مساهمتك الكريمة تُسهم مباشرة في تطوير منصة القرآن الكريم، والأذكار، وخدمات Telegram التفاعلية لخدمة ملايين المسلمين.</p>
+              <span class="telegram-support-badge">سهم الأثر البرمجي</span>
+              <button class="btn btn-outline-success" type="button" data-telegram-support-amount="250">قدّم سهم الأثر · 250 جنيه</button>
+            </div>
+          </section>
+        </div>
       </section>
     </div>
 
@@ -587,6 +713,53 @@
       </section>
     </div>
 
+    <div class="modal fade" id="telegram-promo-modal" tabindex="-1" aria-labelledby="telegram-promo-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content telegram-promo-modal-content">
+          <div class="modal-header">
+            <div>
+              <p class="section-kicker mb-1">عرض خاص لمتابعي البوت</p>
+              <h2 id="telegram-promo-title" class="modal-title h5">اشتراك زاد Telegram مدى الحياة</h2>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق العرض"></button>
+          </div>
+          <div class="modal-body">
+            <p class="telegram-lifetime-price"><del>500 EGP</del><strong>250 EGP / 250 جنيه مصري مدى الحياة</strong></p>
+            <ul class="telegram-plan-benefits">
+              <li>آيات وورد قرآني يومي.</li>
+              <li>تذكيرات مستمرة بأذكار الصباح والمساء.</li>
+              <li>تحديثات روحانية مخصصة.</li>
+            </ul>
+            <div class="telegram-promo-actions">
+              <button class="btn btn-success w-100" type="button" data-open-account data-payment-method="paymob">المتابعة إلى Paymob الآمن</button>
+              <button class="btn btn-outline-success w-100" type="button" data-open-account data-payment-method="instapay">الدفع عبر InstaPay</button>
+              <a id="telegram-promo-start" class="btn btn-link" href="#" target="_blank" rel="noopener noreferrer" hidden>ابدأ مع بوت Telegram</a>
+            </div>
+            <p class="settings-note">يلزم ربط حساب Telegram أولاً. لا يتم تفعيل الاشتراك قبل التحقق من تأكيد الدفع.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="telegram-success-modal" tabindex="-1" aria-labelledby="telegram-success-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content telegram-success-modal-content">
+          <div class="modal-header">
+            <div>
+              <p class="section-kicker mb-1">الحمد لله</p>
+              <h2 id="telegram-success-title" class="modal-title h5">تم تفعيل اشتراكك مدى الحياة!</h2>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+          </div>
+          <div class="modal-body">
+            <div class="telegram-confetti" aria-hidden="true">✦　✧　✦　✧　✦</div>
+            <p>أصبح بوت زاد جاهزاً لإرسال وردك وتذكيراتك. افتح Telegram واضبط مواعيدك من /remind.</p>
+            <a id="telegram-success-start" class="btn btn-success w-100" href="#" target="_blank" rel="noopener noreferrer" hidden>فتح بوت زاد</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <aside id="support-prompt" class="support-prompt" role="region" aria-labelledby="support-prompt-title" aria-live="polite" hidden>
       <div class="support-prompt-copy">
         <strong id="support-prompt-title">ساهم معنا في تطوير الخير واستمرار زاد</strong>
@@ -597,6 +770,69 @@
         <button id="closeBtn" class="support-prompt-close" type="button" aria-label="إغلاق">إغلاق</button>
       </div>
     </aside>
+
+  <div class="modal fade" id="memorization-modal" tabindex="-1" aria-labelledby="quran-quiz-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable memorization-modal-dialog">
+      <div class="modal-content memorization-modal-content">
+        <div class="modal-header">
+          <div>
+            <p class="section-kicker mb-1">خطوةٌ نحو تثبيت الحفظ</p>
+            <h2 id="quran-quiz-title" class="modal-title h5">التحفيظ واختبار الحفظ</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body">
+          <p class="memorization-intro">راجع تلاوتك باختيار تتمة قرآنية من عدة كلمات، وحدد نطاق السور أو الصفحات أو الآيات.</p>
+          <button id="quiz-calendar-open" class="btn btn-outline-success quiz-calendar-open" type="button" aria-expanded="false" aria-controls="quiz-calendar-section">تقويم التقدّم</button>
+          <section id="quiz-calendar-section" class="quiz-calendar-section" aria-labelledby="quiz-calendar-title" hidden>
+            <div class="quiz-calendar-toolbar">
+              <button id="quiz-calendar-previous" class="btn btn-sm btn-outline-secondary" type="button" aria-label="الشهر السابق">‹</button>
+              <strong id="quiz-calendar-month" aria-live="polite"></strong>
+              <button id="quiz-calendar-next" class="btn btn-sm btn-outline-secondary" type="button" aria-label="الشهر التالي">›</button>
+            </div>
+            <div id="quiz-calendar-grid" class="quiz-calendar-grid" role="grid" aria-labelledby="quiz-calendar-title"></div>
+            <p id="quiz-calendar-summary" class="quiz-calendar-summary" aria-live="polite"></p>
+          </section>
+          <div class="quiz-filters">
+            <label for="quiz-scope-type">نطاق المراجعة
+              <select id="quiz-scope-type" class="form-select">
+                <option value="surah">من سورة إلى سورة</option>
+                <option value="page">من صفحة إلى صفحة</option>
+                <option value="ayah">آيات من سورة واحدة</option>
+              </select>
+            </label>
+            <div class="quiz-range-fields" data-quiz-fields="surah">
+              <label>من سورة<select id="quiz-surah-start" class="form-select"></select></label>
+              <label>إلى سورة<select id="quiz-surah-end" class="form-select"></select></label>
+            </div>
+            <div class="quiz-range-fields" data-quiz-fields="page" hidden>
+              <label for="quiz-page-start">من صفحة<input id="quiz-page-start" class="form-control" type="number" min="1" max="604" value="1" inputmode="numeric"></label>
+              <label for="quiz-page-end">إلى صفحة<input id="quiz-page-end" class="form-control" type="number" min="1" max="604" value="10" inputmode="numeric"></label>
+            </div>
+            <div class="quiz-range-fields" data-quiz-fields="ayah" hidden>
+              <label for="quiz-ayah-surah">السورة<select id="quiz-ayah-surah" class="form-select"></select></label>
+              <label for="quiz-ayah-start">من آية<input id="quiz-ayah-start" class="form-control" type="number" min="1" value="1" inputmode="numeric"></label>
+              <label for="quiz-ayah-end">إلى آية<input id="quiz-ayah-end" class="form-control" type="number" min="1" value="7" inputmode="numeric"></label>
+            </div>
+          </div>
+          <div class="quiz-session-controls">
+            <button id="quiz-start" class="btn btn-success" type="button" disabled>ابدأ المراجعة</button>
+            <button id="quiz-cancel" class="btn btn-outline-secondary" type="button" hidden>إيقاف المراجعة</button>
+            <span id="quiz-hearts" class="quiz-hearts" aria-live="polite" hidden></span>
+          </div>
+          <p id="quiz-status" class="quiz-status" role="status" aria-live="polite">جارٍ تجهيز نص القرآن الكريم...</p>
+          <div id="quiz-question" class="quiz-question" hidden>
+            <p id="quiz-question-reference" class="quiz-question-reference"></p>
+            <p id="quiz-verse-prompt">أكمل تلاوة الآية باختيار العبارة التالية:</p>
+            <p id="quiz-verse-context" class="quiz-verse-context" dir="rtl" aria-label="سياق الآية ونقطة التوقف"></p>
+            <div id="quiz-answer-options" class="quiz-answer-options" role="group" aria-label="اختر العبارة التالية"></div>
+            <button id="quiz-next" class="btn btn-outline-success" type="button" hidden>السؤال التالي</button>
+          </div>
+          <div id="quiz-celebration" class="quiz-celebration" aria-live="polite" hidden></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
       <nav class="mobile-bottom-nav" aria-label="التنقل السريع">
     <button type="button" data-tab-target="#quran-panel" class="mobile-nav-item active" aria-label="القرآن">

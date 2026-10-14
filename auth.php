@@ -197,27 +197,49 @@ function zadAuthVipPlans(): array
     foreach ([
         'monthly' => ['amount_key' => 'VIP_MONTHLY_AMOUNT', 'days' => 30, 'label' => 'شهري - 30 يوماً'],
         'annual' => ['amount_key' => 'VIP_ANNUAL_AMOUNT', 'days' => 365, 'label' => 'سنوي - 365 يوماً'],
+        'telegram_lifetime' => [
+            'amount' => 250,
+            'days' => null,
+            'label' => 'Telegram مدى الحياة',
+        ],
     ] as $planId => $definition) {
-        $rawAmount = getenv($definition['amount_key']);
-        $amount = is_string($rawAmount) && preg_match('/^[1-9][0-9]{0,5}$/', $rawAmount)
-            ? (int) $rawAmount
-            : null;
+        $rawAmount = isset($definition['amount_key']) ? getenv($definition['amount_key']) : null;
+        $amount = isset($definition['amount'])
+            ? $definition['amount']
+            : (is_string($rawAmount) && preg_match('/^[1-9][0-9]{0,5}$/', $rawAmount)
+                ? (int) $rawAmount
+                : null);
+        $methods = [];
+        foreach (['card', 'vodafone_cash', 'etisalat_cash', 'orange_cash'] as $method) {
+            $methods[$method] = $amount !== null
+                && ($planId === 'telegram_lifetime' || $method === 'card')
+                && zadAuthPaymobConfigured($method);
+        }
         $plans[$planId] = [
             'id' => $planId,
             'label' => $definition['label'],
             'days' => $definition['days'],
             'amount' => $amount,
             'currency' => 'EGP',
-            'available' => $amount !== null && zadAuthPaymobConfigured(),
+            'methods' => $methods,
+            'available' => $amount !== null && (bool) array_filter($methods),
         ];
     }
     return $plans;
 }
 
-function zadAuthPaymobConfigured(): bool
+function zadAuthPaymobConfigured(string $method = 'card'): bool
 {
     $apiKey = getenv('PAYMOB_API_KEY');
-    $integrationId = getenv('PAYMOB_CARD_INTEGRATION_ID');
+    $integrationEnvironment = [
+        'card' => 'PAYMOB_CARD_INTEGRATION_ID',
+        'vodafone_cash' => 'PAYMOB_VODAFONE_CASH_INTEGRATION_ID',
+        'etisalat_cash' => 'PAYMOB_ETISALAT_CASH_INTEGRATION_ID',
+        'orange_cash' => 'PAYMOB_ORANGE_CASH_INTEGRATION_ID',
+    ];
+    $integrationId = isset($integrationEnvironment[$method])
+        ? getenv($integrationEnvironment[$method])
+        : null;
     $iframeId = getenv('PAYMOB_IFRAME_ID');
     $hmacSecret = getenv('PAYMOB_HMAC_SECRET');
     return is_string($apiKey) && $apiKey !== ''
@@ -226,15 +248,231 @@ function zadAuthPaymobConfigured(): bool
         && is_string($hmacSecret) && $hmacSecret !== '';
 }
 
+function zadAuthTelegramBotAuthorized(): bool
+{
+    $secret = getenv('TELEGRAM_BOT_API_SECRET');
+    $authorization = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    return is_string($secret) && strlen($secret) >= 32
+        && is_string($authorization)
+        && str_starts_with($authorization, 'Bearer ')
+        && hash_equals($secret, substr($authorization, 7));
+}
+
+function zadAuthTelegramReviewerAuthorized(): bool
+{
+    $secret = getenv('TELEGRAM_RECEIPT_REVIEW_SECRET');
+    $authorization = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    return is_string($secret) && strlen($secret) >= 32
+        && is_string($authorization)
+        && str_starts_with($authorization, 'Bearer ')
+        && hash_equals($secret, substr($authorization, 7));
+}
+
+function zadAuthTelegramBotUsername(): string
+{
+    $username = getenv('TELEGRAM_BOT_USERNAME');
+    return is_string($username) && preg_match('/^[A-Za-z0-9_]{5,32}$/', $username)
+        ? $username
+        : '';
+}
+
 function zadAuthRedirect(array $config, string $query = ''): never
 {
     header('Location: ' . $config['app_origin'] . '/' . $query, true, 303);
     exit;
 }
 
-zadAuthStartSession();
 $action = $_GET['action'] ?? 'me';
 $config = zadAuthConfig();
+
+if ($action === 'telegram-bot-link') {
+    zadRequireMethod('POST');
+    zadRequireJsonContentType();
+    if (!zadAuthTelegramBotAuthorized() || $config === null) {
+        zadJsonResponse(403, ['error' => 'Telegram bot authorization failed']);
+    }
+    zadRateLimit('telegram-bot-link', 30, 60);
+    $data = zadReadJsonBody();
+    $token = $data['token'] ?? null;
+    $chatId = $data['chatId'] ?? null;
+    if (!is_string($token) || !preg_match('/^[A-Za-z0-9_-]{40,48}$/', $token)
+        || (!is_string($chatId) && !is_int($chatId))
+        || !preg_match('/^[1-9][0-9]{0,19}$/', (string) $chatId)) {
+        zadJsonResponse(422, ['error' => 'Telegram account link data is invalid']);
+    }
+
+    $linked = zadAuthWithUsers($config, static function (array &$users) use ($token, $chatId): bool {
+        $tokenHash = hash('sha256', $token);
+        foreach ($users as $userId => &$user) {
+            if ((!is_string($userId) && !is_int($userId))
+                || str_starts_with((string) $userId, '_') || !is_array($user)) {
+                continue;
+            }
+            $userId = (string) $userId;
+            $link = $user['telegramLink'] ?? null;
+            if (!is_array($link) || !is_string($link['tokenHash'] ?? null)
+                || !hash_equals($link['tokenHash'], $tokenHash)
+                || !is_string($link['expiresAt'] ?? null)
+                || strtotime($link['expiresAt']) <= time()) {
+                continue;
+            }
+            $existingChatId = $user['telegramChatId'] ?? null;
+            if (is_string($existingChatId) && $existingChatId !== (string) $chatId) {
+                unset($user);
+                return false;
+            }
+            foreach ($users as $otherUserId => $otherUser) {
+                if ((string) $otherUserId !== $userId && is_array($otherUser)
+                    && ($otherUser['telegramChatId'] ?? null) === (string) $chatId) {
+                    unset($user);
+                    return false;
+                }
+            }
+            $user['telegramChatId'] = (string) $chatId;
+            $user['telegramLinkedAt'] = gmdate(DATE_ATOM);
+            unset($user['telegramLink']);
+            unset($user);
+            return true;
+        }
+        unset($user);
+        return false;
+    }, true);
+
+    if (!$linked) {
+        zadJsonResponse(404, ['error' => 'Link code is invalid, expired, or already used']);
+    }
+    zadJsonResponse(200, ['linked' => true]);
+}
+
+if ($action === 'telegram-bot-status') {
+    zadRequireMethod('GET');
+    if (!zadAuthTelegramBotAuthorized() || $config === null) {
+        zadJsonResponse(403, ['error' => 'Telegram bot authorization failed']);
+    }
+    $chatId = $_GET['chat_id'] ?? '';
+    if (!is_string($chatId) || !preg_match('/^[1-9][0-9]{0,19}$/', $chatId)) {
+        zadJsonResponse(422, ['error' => 'Telegram chat identifier is invalid']);
+    }
+    $subscription = zadAuthWithUsers($config, static function (array $users) use ($chatId): ?array {
+        foreach ($users as $userId => $user) {
+            if ((is_string($userId) || is_int($userId))
+                && !str_starts_with((string) $userId, '_') && is_array($user)
+                && ($user['telegramChatId'] ?? null) === $chatId) {
+                return is_array($user['subscription'] ?? null) ? $user['subscription'] : null;
+            }
+        }
+        return null;
+    });
+    $expiresAt = is_string($subscription['expiresAt'] ?? null) ? $subscription['expiresAt'] : null;
+    $active = ($subscription['status'] ?? null) === 'active'
+        && (($subscription['plan'] ?? null) === 'telegram_lifetime'
+            || ($expiresAt !== null && strtotime($expiresAt) > time()));
+    zadJsonResponse(200, [
+        'active' => $active,
+        'plan' => $active ? ($subscription['plan'] ?? null) : null,
+        'expiresAt' => $active ? $expiresAt : null,
+    ]);
+}
+
+if (in_array($action, ['telegram-receipt-review', 'telegram-receipts', 'telegram-receipt-image'], true)) {
+    if (!zadAuthTelegramReviewerAuthorized() || $config === null) {
+        zadJsonResponse(403, ['error' => 'Receipt reviewer authorization failed']);
+    }
+    if ($action === 'telegram-receipt-review') {
+        zadRequireMethod('POST');
+        zadRequireJsonContentType();
+        zadRateLimit('telegram-receipt-review', 60, 60);
+        $data = zadReadJsonBody();
+        $receiptId = $data['receiptId'] ?? null;
+        $approved = $data['approved'] ?? null;
+        if (!is_string($receiptId) || !preg_match('/^[a-f0-9]{32}$/', $receiptId)
+            || !is_bool($approved)) {
+            zadJsonResponse(422, ['error' => 'Receipt decision is invalid']);
+        }
+        $reviewed = zadAuthWithUsers($config, static function (array &$users) use ($receiptId, $approved): bool {
+            $receipt = $users['_telegramReceipts'][$receiptId] ?? null;
+            if (!is_array($receipt) || ($receipt['status'] ?? null) !== 'pending_review') {
+                return false;
+            }
+            $userId = $receipt['userId'] ?? null;
+            if (!is_string($userId) || !is_array($users[$userId] ?? null)
+                || !is_string($users[$userId]['telegramChatId'] ?? null)) {
+                $receipt['status'] = 'rejected';
+                $receipt['reviewedAt'] = gmdate(DATE_ATOM);
+                $users['_telegramReceipts'][$receiptId] = $receipt;
+                return false;
+            }
+            $receipt['status'] = $approved ? 'approved' : 'rejected';
+            $receipt['reviewedAt'] = gmdate(DATE_ATOM);
+            $users['_telegramReceipts'][$receiptId] = $receipt;
+            if ($approved) {
+                $users[$userId]['subscription'] = [
+                    'status' => 'active',
+                    'plan' => 'telegram_lifetime',
+                    'expiresAt' => null,
+                ];
+                $users[$userId]['updatedAt'] = gmdate(DATE_ATOM);
+            }
+            return true;
+        }, true);
+        if (!$reviewed) {
+            zadJsonResponse(409, ['error' => 'Receipt is not pending or its account is not linked']);
+        }
+        zadJsonResponse(200, ['reviewed' => true, 'approved' => $approved]);
+    }
+
+    if ($action === 'telegram-receipts') {
+        zadRequireMethod('GET');
+        zadRateLimit('telegram-receipt-review-list', 30, 60);
+        $pendingReceipts = zadAuthWithUsers($config, static function (array $users): array {
+            $pending = [];
+            foreach ($users['_telegramReceipts'] ?? [] as $receiptId => $receipt) {
+                if (!is_string($receiptId) || !is_array($receipt)
+                    || ($receipt['status'] ?? null) !== 'pending_review') {
+                    continue;
+                }
+                $pending[] = [
+                    'receiptId' => $receiptId,
+                    'transactionId' => (string) ($receipt['transactionId'] ?? ''),
+                    'createdAt' => (string) ($receipt['createdAt'] ?? ''),
+                    'hasImage' => is_string($receipt['filePath'] ?? null),
+                ];
+                if (count($pending) >= 25) break;
+            }
+            return $pending;
+        });
+        zadJsonResponse(200, ['pending' => $pendingReceipts]);
+    }
+
+    if ($action === 'telegram-receipt-image') {
+        zadRequireMethod('GET');
+        $receiptId = $_GET['receipt_id'] ?? '';
+        if (!is_string($receiptId) || !preg_match('/^[a-f0-9]{32}$/', $receiptId)) {
+            zadJsonResponse(422, ['error' => 'Receipt identifier is invalid']);
+        }
+        $receipt = zadAuthWithUsers($config, static fn(array $users): mixed => $users['_telegramReceipts'][$receiptId] ?? null);
+        if (!is_array($receipt) || !is_string($receipt['filePath'] ?? null)
+            || !in_array($receipt['mimeType'] ?? null, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+            zadJsonResponse(404, ['error' => 'Receipt image was not found']);
+        }
+        $receiptDirectory = realpath($config['data_directory'] . DIRECTORY_SEPARATOR . 'telegram-receipts');
+        $receiptPath = realpath($receipt['filePath']);
+        if (!is_string($receiptDirectory) || !is_string($receiptPath)
+            || !str_starts_with($receiptPath, $receiptDirectory . DIRECTORY_SEPARATOR)
+            || !is_file($receiptPath)) {
+            zadJsonResponse(404, ['error' => 'Receipt image was not found']);
+        }
+        header('Content-Type: ' . $receipt['mimeType']);
+        header('Content-Length: ' . filesize($receiptPath));
+        header('Cache-Control: no-store, private');
+        header('Content-Disposition: inline; filename="receipt-' . $receiptId . '"');
+        readfile($receiptPath);
+        exit;
+    }
+    zadJsonResponse(404, ['error' => 'Unknown receipt review action']);
+}
+
+zadAuthStartSession();
 
 if ($action === 'me') {
     zadRequireMethod('GET');
@@ -257,6 +495,7 @@ if ($action === 'me') {
             'name' => (string) ($user['name'] ?? ''),
             'email' => (string) ($user['email'] ?? ''),
             'picture' => (string) ($user['picture'] ?? ''),
+            'telegramLinked' => is_string($user['telegramChatId'] ?? null),
             'subscription' => is_array($user['subscription'] ?? null)
                 ? $user['subscription']
                 : ['status' => 'inactive', 'plan' => null, 'expiresAt' => null],
@@ -273,19 +512,30 @@ if ($action === 'vip-checkout') {
     if (!is_string($userId) || $config === null) {
         zadJsonResponse(401, ['error' => 'Sign-in is required']);
     }
-    if (!zadAuthPaymobConfigured()) {
-        zadJsonResponse(503, ['error' => 'VIP checkout is not configured on the server']);
-    }
-
     $data = zadReadJsonBody();
     $planId = $data['plan'] ?? null;
+    $method = $data['method'] ?? 'card';
     $plans = zadAuthVipPlans();
-    if (!is_string($planId) || !isset($plans[$planId]) || !$plans[$planId]['available']) {
+    if (!is_string($planId) || !isset($plans[$planId])
+        || !is_string($method) || !in_array($method, ['card', 'vodafone_cash', 'etisalat_cash', 'orange_cash'], true)) {
         zadJsonResponse(422, ['error' => 'Choose an available VIP plan']);
+    }
+    if (($plans[$planId]['methods'][$method] ?? false) !== true
+        || !zadAuthPaymobConfigured($method)) {
+        zadJsonResponse(503, ['error' => 'This payment method is not configured on the server']);
     }
     $user = zadAuthWithUsers($config, static fn(array $users): mixed => $users[$userId] ?? null);
     if (!is_array($user) || !filter_var($user['email'] ?? null, FILTER_VALIDATE_EMAIL)) {
         zadJsonResponse(401, ['error' => 'A verified Google account is required']);
+    }
+    if ($planId === 'telegram_lifetime'
+        && (!is_string($user['telegramChatId'] ?? null)
+            || !preg_match('/^[1-9][0-9]{0,19}$/', $user['telegramChatId']))) {
+        zadJsonResponse(409, ['error' => 'Link your Telegram account before purchasing this plan']);
+    }
+    $phone = preg_replace('/[\s().-]/', '', zadCleanText($data['phone'] ?? null, 24)) ?? '';
+    if ($method !== 'card' && !preg_match('/^\+?[0-9]{8,15}$/', $phone)) {
+        zadJsonResponse(422, ['error' => 'Enter a valid wallet phone number']);
     }
 
     $authResponse = zadPaymobRequest('auth/tokens', ['api_key' => getenv('PAYMOB_API_KEY')]);
@@ -314,6 +564,12 @@ if ($action === 'vip-checkout') {
     }
 
     $nameParts = preg_split('/\s+/u', zadCleanText($user['name'] ?? null, 80), 2) ?: [];
+    $integrationEnvironment = [
+        'card' => 'PAYMOB_CARD_INTEGRATION_ID',
+        'vodafone_cash' => 'PAYMOB_VODAFONE_CASH_INTEGRATION_ID',
+        'etisalat_cash' => 'PAYMOB_ETISALAT_CASH_INTEGRATION_ID',
+        'orange_cash' => 'PAYMOB_ORANGE_CASH_INTEGRATION_ID',
+    ];
     $paymentResponse = zadPaymobRequest('acceptance/payment_keys', [
         'auth_token' => $authToken,
         'amount_cents' => $amount * 100,
@@ -326,7 +582,7 @@ if ($action === 'vip-checkout') {
             'first_name' => $nameParts[0] ?? 'Zad',
             'street' => 'NA',
             'building' => 'NA',
-            'phone_number' => 'NA',
+            'phone_number' => $method === 'card' ? 'NA' : $phone,
             'shipping_method' => 'NA',
             'postal_code' => 'NA',
             'city' => 'Cairo',
@@ -335,7 +591,7 @@ if ($action === 'vip-checkout') {
             'state' => 'Cairo',
         ],
         'currency' => 'EGP',
-        'integration_id' => (int) getenv('PAYMOB_CARD_INTEGRATION_ID'),
+        'integration_id' => (int) getenv($integrationEnvironment[$method]),
         'lock_order_when_paid' => true,
     ]);
     $paymentToken = $paymentResponse['token'] ?? null;
@@ -344,10 +600,15 @@ if ($action === 'vip-checkout') {
     }
 
     $orderKey = (string) $orderId;
+    $telegramChatId = $planId === 'telegram_lifetime'
+        ? (string) $user['telegramChatId']
+        : null;
     zadAuthWithUsers($config, static function (array &$users) use (
         $orderKey,
         $userId,
         $planId,
+        $method,
+        $telegramChatId,
         $amount,
         $plans,
         $merchantOrderId
@@ -358,7 +619,9 @@ if ($action === 'vip-checkout') {
         $users['_orders'][$orderKey] = [
             'userId' => $userId,
             'plan' => $planId,
+            'method' => $method,
             'days' => $plans[$planId]['days'],
+            'telegramChatId' => $telegramChatId,
             'amount' => $amount,
             'currency' => 'EGP',
             'merchantOrderId' => $merchantOrderId,
@@ -372,6 +635,152 @@ if ($action === 'vip-checkout') {
         'redirectUrl' => 'https://accept.paymob.com/api/acceptance/iframes/'
             . rawurlencode($iframeId) . '?payment_token=' . rawurlencode($paymentToken),
     ]);
+}
+
+if ($action === 'telegram-link') {
+    zadRequireMethod('POST');
+    zadRequireSameOrigin();
+    zadRequireJsonContentType();
+    zadAuthCsrf();
+    zadRateLimit('telegram-account-link', 5, 300);
+    $userId = $_SESSION['google_sub'] ?? null;
+    $username = zadAuthTelegramBotUsername();
+    if (!is_string($userId) || $config === null) {
+        zadJsonResponse(401, ['error' => 'Sign-in is required']);
+    }
+    if ($username === '' || strlen((string) getenv('TELEGRAM_BOT_API_SECRET')) < 32) {
+        zadJsonResponse(503, ['error' => 'Telegram account linking is not configured']);
+    }
+
+    $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+    $expiresAt = gmdate(DATE_ATOM, time() + 600);
+    zadAuthWithUsers($config, static function (array &$users) use ($userId, $token, $expiresAt): void {
+        if (!is_array($users[$userId] ?? null)) {
+            zadJsonResponse(404, ['error' => 'Account record was not found']);
+        }
+        $users[$userId]['telegramLink'] = [
+            'tokenHash' => hash('sha256', $token),
+            'expiresAt' => $expiresAt,
+        ];
+    }, true);
+    zadJsonResponse(200, [
+        'startUrl' => 'https://t.me/' . rawurlencode($username) . '?start=link_' . rawurlencode($token),
+        'expiresAt' => $expiresAt,
+    ]);
+}
+
+if ($action === 'telegram-instapay') {
+    zadRequireMethod('POST');
+    zadRequireSameOrigin();
+    zadRequireJsonContentType();
+    zadAuthCsrf();
+    zadRateLimit('telegram-instapay', 5, 300);
+    $userId = $_SESSION['google_sub'] ?? null;
+    if (!is_string($userId) || $config === null) {
+        zadJsonResponse(401, ['error' => 'Sign-in is required']);
+    }
+    $user = zadAuthWithUsers($config, static fn(array $users): mixed => $users[$userId] ?? null);
+    if (!is_array($user) || !is_string($user['telegramChatId'] ?? null)) {
+        zadJsonResponse(409, ['error' => 'Link your Telegram account before purchasing this plan']);
+    }
+    $paymentUrl = getenv('INSTAPAY_PAYMENT_URL');
+    $urlParts = is_string($paymentUrl) ? parse_url($paymentUrl) : false;
+    if (!is_string($paymentUrl) || $paymentUrl === '' || !is_array($urlParts)
+        || ($urlParts['scheme'] ?? '') !== 'https' || empty($urlParts['host'])
+        || isset($urlParts['user']) || isset($urlParts['pass'])) {
+        zadJsonResponse(503, ['error' => 'InstaPay is not configured safely']);
+    }
+    zadJsonResponse(200, [
+        'redirectUrl' => $paymentUrl,
+        'amount' => zadAuthVipPlans()['telegram_lifetime']['amount'],
+        'currency' => 'EGP',
+    ]);
+}
+
+if ($action === 'telegram-receipt') {
+    zadRequireMethod('POST');
+    zadRequireSameOrigin();
+    zadAuthCsrf();
+    zadRateLimit('telegram-receipt', 3, 3600);
+    $userId = $_SESSION['google_sub'] ?? null;
+    if (!is_string($userId) || $config === null) {
+        zadJsonResponse(401, ['error' => 'Sign-in is required']);
+    }
+    $user = zadAuthWithUsers($config, static fn(array $users): mixed => $users[$userId] ?? null);
+    if (!is_array($user) || !is_string($user['telegramChatId'] ?? null)) {
+        zadJsonResponse(409, ['error' => 'Link your Telegram account before submitting payment evidence']);
+    }
+
+    $transactionId = zadCleanText($_POST['transactionId'] ?? null, 120);
+    $upload = $_FILES['receipt'] ?? null;
+    $receiptMime = null;
+    $receiptPath = null;
+    if (is_array($upload) && ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+        if (($upload['error'] ?? null) !== UPLOAD_ERR_OK
+            || !is_string($upload['tmp_name'] ?? null)
+            || !is_int($upload['size'] ?? null)
+            || $upload['size'] < 1 || $upload['size'] > 2 * 1024 * 1024
+            || !is_uploaded_file($upload['tmp_name'])) {
+            zadJsonResponse(422, ['error' => 'Receipt image must be no larger than 2 MB']);
+        }
+        $fileInfo = new finfo(FILEINFO_MIME_TYPE);
+        $receiptMime = $fileInfo->file($upload['tmp_name']);
+        $image = @getimagesize($upload['tmp_name']);
+        $allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!is_string($receiptMime) || !in_array($receiptMime, $allowedImageTypes, true)
+            || !is_array($image) || ($image[0] ?? 0) < 1 || ($image[1] ?? 0) < 1
+            || ($image[0] ?? 0) > 8000 || ($image[1] ?? 0) > 8000) {
+            zadJsonResponse(422, ['error' => 'Upload a valid JPEG, PNG, or WebP receipt image']);
+        }
+        $receiptDirectory = $config['data_directory'] . DIRECTORY_SEPARATOR . 'telegram-receipts';
+        if (!is_dir($receiptDirectory)
+            && !mkdir($receiptDirectory, 0700, true) && !is_dir($receiptDirectory)) {
+            zadJsonResponse(503, ['error' => 'Receipt storage is unavailable']);
+        }
+        $resolvedReceiptDirectory = realpath($receiptDirectory);
+        $webRoot = realpath(__DIR__);
+        if (!is_string($resolvedReceiptDirectory) || !is_string($webRoot)
+            || str_starts_with($resolvedReceiptDirectory, $webRoot . DIRECTORY_SEPARATOR)) {
+            zadJsonResponse(503, ['error' => 'Receipt storage must be outside the web root']);
+        }
+        $extension = ['image/jpeg' => '.jpg', 'image/png' => '.png', 'image/webp' => '.webp'][$receiptMime];
+        $receiptPath = $resolvedReceiptDirectory . DIRECTORY_SEPARATOR . bin2hex(random_bytes(20)) . $extension;
+        if (!move_uploaded_file($upload['tmp_name'], $receiptPath)) {
+            zadJsonResponse(503, ['error' => 'Receipt image could not be stored securely']);
+        }
+        if (function_exists('chmod')) {
+            chmod($receiptPath, 0600);
+        }
+    }
+    if ($transactionId === '' && $receiptPath === null) {
+        zadJsonResponse(422, ['error' => 'Enter a transaction ID or attach a receipt image']);
+    }
+
+    $receiptId = bin2hex(random_bytes(16));
+    try {
+        zadAuthWithUsers($config, static function (array &$users) use (
+            $userId,
+            $receiptId,
+            $transactionId,
+            $receiptPath,
+            $receiptMime
+        ): void {
+            $users['_telegramReceipts'][$receiptId] = [
+                'userId' => $userId,
+                'transactionId' => $transactionId,
+                'filePath' => $receiptPath,
+                'mimeType' => $receiptMime,
+                'status' => 'pending_review',
+                'createdAt' => gmdate(DATE_ATOM),
+            ];
+        }, true);
+    } catch (JsonException $error) {
+        if (is_string($receiptPath) && is_file($receiptPath)) {
+            unlink($receiptPath);
+        }
+        throw $error;
+    }
+    zadJsonResponse(202, ['receiptId' => $receiptId, 'status' => 'pending_review']);
 }
 
 if ($action === 'google') {

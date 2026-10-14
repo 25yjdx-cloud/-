@@ -57,6 +57,11 @@ function obfuscateProductionAssets() {
         path.join(outputRoot, 'assets', 'icons'),
         { recursive: true },
       );
+      await cp(
+        path.join(projectRoot, 'public', 'audio'),
+        path.join(outputRoot, 'audio'),
+        { recursive: true },
+      );
       const htmlPath = path.join(outputRoot, 'index.html');
       const html = await readFile(htmlPath, 'utf8');
       await writeFile(

@@ -64,12 +64,13 @@ if (($transaction['success'] ?? false) === true
     && ($transaction['is_refund'] ?? true) === false
     && ($transaction['is_voided'] ?? true) === false
     && ($transaction['currency'] ?? null) === 'EGP'
-    && is_numeric($transaction['amount_cents'] ?? null)
+    && ($transaction['is_capture'] ?? false) === true
+    && (is_int($transaction['amount_cents'] ?? null)
+        || (is_string($transaction['amount_cents'] ?? null)
+            && preg_match('/^[0-9]+$/', $transaction['amount_cents'])))
     && (string) ($transaction['order']['id'] ?? '') !== '') {
     $dataDirectory = getenv('AUTH_DATA_DIR');
-    $integrationId = getenv('PAYMOB_CARD_INTEGRATION_ID');
-    if (!is_string($dataDirectory) || $dataDirectory === ''
-        || !is_string($integrationId) || !preg_match('/^[0-9]+$/', $integrationId)) {
+    if (!is_string($dataDirectory) || $dataDirectory === '') {
         zadJsonResponse(503, ['error' => 'VIP subscription storage is not configured']);
     }
     if (!is_dir($dataDirectory) && !mkdir($dataDirectory, 0700, true) && !is_dir($dataDirectory)) {
@@ -104,28 +105,51 @@ if (($transaction['success'] ?? false) === true
     $expectedAmount = is_array($order) && is_int($order['amount'] ?? null)
         ? $order['amount'] * 100
         : -1;
+    $paymentMethod = is_array($order) && is_string($order['method'] ?? null)
+        ? $order['method']
+        : 'card';
+    $integrationEnvironment = [
+        'card' => 'PAYMOB_CARD_INTEGRATION_ID',
+        'vodafone_cash' => 'PAYMOB_VODAFONE_CASH_INTEGRATION_ID',
+        'etisalat_cash' => 'PAYMOB_ETISALAT_CASH_INTEGRATION_ID',
+        'orange_cash' => 'PAYMOB_ORANGE_CASH_INTEGRATION_ID',
+    ];
+    $integrationId = isset($integrationEnvironment[$paymentMethod])
+        ? getenv($integrationEnvironment[$paymentMethod])
+        : null;
     if (is_array($order)
         && ($order['status'] ?? null) === 'pending'
         && (int) $transaction['amount_cents'] === $expectedAmount
+        && is_string($integrationId) && preg_match('/^[0-9]+$/', $integrationId)
         && (string) ($transaction['integration_id'] ?? '') === $integrationId
         && (!is_string($eventMerchantOrderId)
             || hash_equals((string) ($order['merchantOrderId'] ?? ''), $eventMerchantOrderId))) {
         $userId = $order['userId'] ?? null;
         $days = $order['days'] ?? null;
-        if (is_string($userId) && is_int($days) && $days > 0
-            && is_array($users[$userId] ?? null)) {
-            $currentExpiry = $users[$userId]['subscription']['expiresAt'] ?? '';
-            $currentTimestamp = is_string($currentExpiry) ? strtotime($currentExpiry) : false;
-            $startTimestamp = is_int($currentTimestamp) && $currentTimestamp > time()
-                ? $currentTimestamp
-                : time();
-            $expiry = (new DateTimeImmutable('@' . $startTimestamp))
-                ->modify('+' . $days . ' days')
-                ->setTimezone(new DateTimeZone('UTC'));
+        $plan = $order['plan'] ?? null;
+        $isLifetime = $plan === 'telegram_lifetime';
+        if (is_string($userId) && is_array($users[$userId] ?? null)
+            && (($isLifetime
+                && is_string($users[$userId]['telegramChatId'] ?? null)
+                && is_string($order['telegramChatId'] ?? null)
+                && hash_equals($users[$userId]['telegramChatId'], $order['telegramChatId']))
+                || (!$isLifetime && is_int($days) && $days > 0))) {
+            $expiresAt = null;
+            if (!$isLifetime) {
+                $currentExpiry = $users[$userId]['subscription']['expiresAt'] ?? '';
+                $currentTimestamp = is_string($currentExpiry) ? strtotime($currentExpiry) : false;
+                $startTimestamp = is_int($currentTimestamp) && $currentTimestamp > time()
+                    ? $currentTimestamp
+                    : time();
+                $expiry = (new DateTimeImmutable('@' . $startTimestamp))
+                    ->modify('+' . $days . ' days')
+                    ->setTimezone(new DateTimeZone('UTC'));
+                $expiresAt = $expiry->format(DATE_ATOM);
+            }
             $users[$userId]['subscription'] = [
                 'status' => 'active',
-                'plan' => $order['plan'],
-                'expiresAt' => $expiry->format(DATE_ATOM),
+                'plan' => $plan,
+                'expiresAt' => $expiresAt,
             ];
             $users[$userId]['updatedAt'] = gmdate(DATE_ATOM);
             $users['_orders'][$orderId]['status'] = 'completed';

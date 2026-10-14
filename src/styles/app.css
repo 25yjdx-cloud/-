@@ -49,13 +49,21 @@ button {
 }
 
 .site-header {
-  position: relative;
-  z-index: 1;
+  position: sticky;
+  z-index: 1020;
+  top: 0;
   overflow: hidden;
   background:
-    linear-gradient(110deg, rgb(16 55 46 / 97%), rgb(23 72 59 / 95%)),
+    linear-gradient(110deg, rgb(16 55 46 / 88%), rgb(23 72 59 / 86%)),
     repeating-linear-gradient(45deg, transparent 0 15px, rgb(255 255 255 / 8%) 15px 16px);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   color: #fff;
+}
+
+.site-header .header-inner {
+  min-height: 5.5rem;
+  padding-inline: clamp(1rem, 2.5vw, 2rem);
 }
 
 .site-header::after {
@@ -82,10 +90,17 @@ button {
 
 .brand {
   display: inline-flex;
+  min-width: 0;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   color: inherit;
   text-decoration: none;
+}
+
+.brand > span:last-child {
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .brand-mark {
@@ -118,8 +133,9 @@ button {
 
 .header-actions {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 1rem;
+  gap: 0.65rem;
 }
 
 .header-icon-bar {
@@ -2223,7 +2239,7 @@ button {
 }
 
 .night-mode .site-header {
-  background: linear-gradient(110deg, #0a241d, #12392d);
+  background: linear-gradient(110deg, rgb(10 36 29 / 90%), rgb(18 57 45 / 88%));
 }
 
 .night-mode .app-tabs .nav-link.active {
@@ -2309,8 +2325,8 @@ button {
   color: var(--ink);
 }
 
-@media (min-width: 992px) {
-  .index-panel.offcanvas-lg {
+@media (min-width: 768px) {
+  .index-panel.offcanvas-md {
     position: sticky;
     top: 1rem;
     visibility: visible !important;
@@ -2322,7 +2338,7 @@ button {
   }
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 767.98px) {
   .quran-layout {
     display: block;
   }
@@ -2338,8 +2354,8 @@ button {
   }
 }
 
-@media (max-width: 767.98px) {
-  .header-inner {
+@media (max-width: 768px) {
+  .site-header .header-inner {
     min-height: 4.8rem;
   }
 
@@ -2530,13 +2546,13 @@ button {
   }
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 768px) {
   .quran-active .quran-reader {
     min-height: 0;
   }
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 768px) {
   .quran-active .reader-settings {
     gap: 0.25rem;
   }
@@ -2666,7 +2682,7 @@ body.quran-active {
   display: none;
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 767.98px) {
   .quran-active .quran-layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2686,7 +2702,7 @@ body.quran-active {
   }
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 768px) {
   .quran-active .app-shell {
     padding: 0.25rem 0.5rem 0.4rem;
   }
@@ -3309,7 +3325,7 @@ body[data-reader-theme="warm"] .mushaf-stage {
   transition: width 180ms ease, height 180ms ease, max-width 180ms ease, max-height 180ms ease, filter 100ms linear;
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 768px) {
   .quran-active .reader-quick-menu-panel {
     max-height: min(60vh, 280px);
     overflow-y: auto !important;
@@ -3632,7 +3648,7 @@ body[data-reader-theme="warm"] .mushaf-stage {
   }
 }
 
-@media (min-width: 992px) {
+@media (min-width: 768px) {
   body.quran-active:not(.reader-focus-mode) {
     display: block;
     height: auto;
@@ -3777,4 +3793,1971 @@ body.quran-active:not(.reader-focus-mode) .quran-reader:not(:fullscreen) {
 body.quran-active:not(.reader-focus-mode) .quran-reader:not(:fullscreen) .mushaf-stage {
   flex: initial;
   overflow: visible;
+}
+.sidebar-open-button,
+.sidebar-close-button,
+.header-settings-button {
+  display: inline-grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 0.8rem;
+  background: rgb(255 255 255 / 9%);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.3rem;
+}
+
+.sidebar-open-button {
+  display: inline-grid;
+}
+
+.header-settings-button {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-color: rgb(255 255 255 / 25%);
+  background: rgb(255 255 255 / 9%);
+}
+
+.header-settings-button:hover,
+.sidebar-open-button:hover,
+.sidebar-close-button:hover {
+  background: rgb(255 255 255 / 18%);
+}
+
+.app-sidebar {
+  position: fixed;
+  z-index: 1045;
+  inset: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: visibility 220ms step-end;
+}
+
+.sidebar-panel {
+  position: absolute;
+  z-index: 1;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: flex;
+  width: min(20rem, 88vw);
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+  padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
+  border-inline-end: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 0 0, rgb(189 151 96 / 12%), transparent 14rem),
+    var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 18%);
+  overscroll-behavior: contain;
+  transform: translateX(105%);
+  transition: transform 220ms cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.sidebar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-heading h2 {
+  margin: 0;
+  color: var(--green-deep);
+  font-size: 1.05rem;
+}
+
+.sidebar-heading .section-kicker {
+  color: var(--gold);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.sidebar-close-button {
+  flex: 0 0 auto;
+  border-color: var(--border);
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.sidebar-navigation {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.sidebar-nav-link {
+  display: flex;
+  min-height: 2.9rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  text-align: start;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.sidebar-nav-link > span {
+  display: inline-grid;
+  width: 1.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--gold);
+  font-size: 1.1rem;
+}
+
+.sidebar-nav-link:hover,
+.sidebar-nav-link:focus-visible {
+  border-color: var(--border);
+  background: var(--surface-soft);
+}
+
+.sidebar-nav-link.is-active {
+  border-color: rgb(189 151 96 / 24%);
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-weight: 800;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgb(8 19 15 / 48%);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.sidebar-backdrop[hidden] {
+  display: none;
+}
+
+.app-sidebar.is-open {
+  pointer-events: auto;
+  visibility: visible;
+  transition: visibility 0s;
+}
+
+.app-sidebar.is-open .sidebar-panel {
+  transform: translateX(0);
+}
+
+.app-sidebar.is-open .sidebar-backdrop {
+  opacity: 1;
+}
+
+.reader-focus-mode .app-sidebar {
+  display: none;
+}
+
+.adhkar-player {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1rem 1.2rem;
+  padding: clamp(1rem, 3vw, 1.4rem);
+  border: 1px solid var(--border);
+  border-radius: 1.1rem;
+  background:
+    radial-gradient(circle at 0 0, rgb(189 151 96 / 13%), transparent 13rem),
+    var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+}
+
+.adhkar-player-heading,
+.adhkar-player-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.adhkar-player-heading h2 {
+  margin: 0;
+  color: var(--green-deep);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.adhkar-player-badge {
+  flex: 0 0 auto;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.adhkar-track-select {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.adhkar-track-button {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-soft);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.adhkar-track-button.is-active {
+  border-color: var(--green);
+  background: var(--green-soft);
+  color: var(--green-deep);
+}
+
+.adhkar-player-controls {
+  justify-content: flex-start;
+}
+
+.adhkar-play-button {
+  display: inline-grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.15rem;
+}
+
+.adhkar-play-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.adhkar-progress-group {
+  min-width: 0;
+  flex: 1;
+}
+
+.adhkar-progress-group input {
+  width: 100%;
+  accent-color: var(--green);
+}
+
+.adhkar-time-row {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  direction: ltr;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.adhkar-player-status {
+  min-height: 1.4rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+
+.telegram-service-page {
+  display: grid;
+  max-width: 68rem;
+  gap: 1.25rem;
+  margin: 1.25rem auto;
+}
+
+.telegram-service-hero {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  padding: clamp(1.5rem, 5vw, 3.25rem);
+  border: 1px solid var(--border);
+  border-radius: 1.4rem;
+  background:
+    radial-gradient(ellipse at 50% 0, rgb(189 151 96 / 16%), transparent 22rem),
+    var(--surface);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.telegram-service-icon {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  border-radius: 1.2rem;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 1.7rem;
+}
+
+.telegram-service-hero .section-kicker {
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.telegram-service-hero h1 {
+  margin: 0;
+  color: var(--green-deep);
+  font-size: clamp(1.4rem, 4vw, 2.1rem);
+}
+
+.telegram-service-hero > p:not(.section-kicker, .telegram-service-status) {
+  max-width: 42rem;
+  margin: 0;
+  color: var(--muted);
+}
+
+.telegram-service-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-top: 0.45rem;
+}
+
+.telegram-service-actions .btn {
+  min-width: 10rem;
+  min-height: 2.8rem;
+  align-content: center;
+}
+
+.telegram-service-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.telegram-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.telegram-feature-card,
+.telegram-service-note {
+  padding: 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.telegram-feature-card > span {
+  color: var(--gold);
+  font-size: 1.45rem;
+}
+
+.telegram-feature-card h2 {
+  margin: 0.35rem 0;
+  color: var(--green-deep);
+  font-size: 1rem;
+}
+
+.telegram-feature-card p,
+.telegram-service-note p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.8;
+}
+
+.telegram-service-note strong {
+  color: var(--green-deep);
+}
+
+.telegram-service-note ol {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.65rem 0;
+  padding-inline-start: 1.25rem;
+  color: var(--ink);
+  font-size: 0.86rem;
+}
+
+.account-login-hero {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 1.5rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 1.1rem;
+  background:
+    radial-gradient(circle at 50% 0, rgb(189 151 96 / 18%), transparent 12rem),
+    linear-gradient(145deg, var(--surface), var(--surface-soft));
+  text-align: center;
+}
+
+.account-login-symbol {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: 0.35rem;
+  place-items: center;
+  border: 1px solid rgb(189 151 96 / 35%);
+  border-radius: 1.15rem 0.55rem;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 1.65rem;
+  font-weight: 800;
+}
+
+.account-login-hero .section-kicker {
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.account-login-hero h3 {
+  margin: 0;
+  color: var(--green-deep);
+  font-size: 1.2rem;
+}
+
+.account-login-hero .account-modal-note {
+  max-width: 27rem;
+  margin: 0;
+}
+
+.account-feature-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-size: 0.82rem;
+  list-style: none;
+}
+
+.account-feature-list li::before {
+  margin-inline-end: 0.5rem;
+  color: var(--green);
+  content: "✓";
+  font-weight: 900;
+}
+
+.account-login-features {
+  margin-top: 0.8rem;
+}
+
+.account-guest-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.account-guest-form small,
+.account-profile-form small {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.account-avatar-preview {
+  width: 5rem;
+  height: 5rem;
+  justify-self: center;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--green-soft);
+  box-shadow: 0 0 0 1px var(--border), var(--shadow);
+  object-fit: cover;
+}
+
+.account-user-profile:has(.account-user-avatar) {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.account-user-profile .account-user-avatar {
+  width: 5rem;
+  height: 5rem;
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--border), var(--shadow);
+  font-size: 1.6rem;
+}
+
+.account-user-profile > span:last-child {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.account-user-profile small {
+  direction: ltr;
+  text-align: center;
+}
+
+.account-user-profile > span:last-child small:lang(ar) {
+  direction: rtl;
+}
+
+.night-mode .app-sidebar .sidebar-panel,
+.night-mode .adhkar-player,
+.night-mode .telegram-service-hero,
+.night-mode .telegram-feature-card,
+.night-mode .telegram-service-note,
+.night-mode .account-login-hero {
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+.night-mode .quran-reader {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.night-mode .reader-toolbar,
+.night-mode .reader-footer {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.night-mode .mushaf-stage {
+  background-color: #1c211d;
+  background-image:
+    linear-gradient(45deg, rgb(211 181 125 / 3%) 25%, transparent 25%, transparent 75%, rgb(211 181 125 / 3%) 75%),
+    linear-gradient(45deg, rgb(211 181 125 / 3%) 25%, transparent 25%, transparent 75%, rgb(211 181 125 / 3%) 75%);
+}
+
+.night-mode[data-reader-theme="paper"] .quran-page-image,
+.night-mode .quran-page-image {
+  filter: brightness(calc(var(--reader-brightness) * 0.82));
+}
+
+@keyframes quran-page-turn-forward {
+  from {
+    opacity: 0.72;
+    transform: translateX(0.9rem) rotateY(-2deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotateY(0);
+  }
+}
+
+@keyframes quran-page-turn-backward {
+  from {
+    opacity: 0.72;
+    transform: translateX(-0.9rem) rotateY(2deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotateY(0);
+  }
+}
+
+.quran-page-image.page-turn-forward {
+  animation: quran-page-turn-forward 145ms ease-out;
+}
+
+.quran-page-image.page-turn-backward {
+  animation: quran-page-turn-backward 145ms ease-out;
+}
+
+.quran-active .mushaf-stage {
+  touch-action: pan-y pinch-zoom;
+}
+
+@media (min-width: 768px) {
+  .reader-column {
+    width: 100%;
+    max-width: 900px;
+    justify-self: center;
+  }
+
+  .quran-reader {
+    width: 100%;
+    max-width: 900px;
+    margin-inline: auto;
+  }
+
+  .quran-layout {
+    grid-template-columns: minmax(220px, 270px) minmax(0, 1fr);
+    overflow-x: clip;
+  }
+}
+
+@media (max-width: 768px) {
+  body.sidebar-open {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body.sidebar-open .mobile-bottom-nav {
+    visibility: hidden;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-panel {
+    width: min(19rem, 88vw);
+  }
+
+  .reader-focus-mode {
+    padding-inline-start: 0;
+  }
+
+  .night-mode .adhkar-player,
+  .night-mode .adhkar-track-button,
+  .night-mode .telegram-feature-card,
+  .night-mode .telegram-service-note,
+  .night-mode .account-login-hero,
+  .night-mode .account-feature-list {
+    border-color: var(--border);
+    background-color: var(--surface);
+    color: var(--ink);
+  }
+
+  .night-mode .adhkar-player-heading h2,
+  .night-mode .telegram-feature-card h2,
+  .night-mode .telegram-service-note strong,
+  .night-mode .account-login-hero h3 {
+    color: var(--green-deep);
+  }
+
+  .night-mode .reader-hint {
+    color: var(--muted);
+  }
+
+  .night-mode .page-nav-button:hover:not(:disabled),
+  .night-mode .sidebar-nav-link:hover,
+  .night-mode .sidebar-nav-link:focus-visible,
+  .night-mode .adhkar-track-button.is-active {
+    background: var(--green-soft);
+    color: var(--green-deep);
+  }
+
+  .night-mode .telegram-service-hero {
+    border-color: var(--border);
+    color: var(--ink);
+  }
+
+  .night-mode .telegram-service-hero h1 {
+    color: var(--green-deep);
+  }
+
+  .night-mode .telegram-feature-card p,
+  .night-mode .telegram-service-note p {
+    color: var(--muted);
+  }
+
+  @media (max-width: 480px) {
+    .header-actions {
+      gap: 0.45rem;
+    }
+
+    .header-settings-button,
+    .sidebar-open-button {
+      width: 2.35rem;
+      height: 2.35rem;
+    }
+  }
+
+  .telegram-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .telegram-service-hero {
+    padding: 1.3rem 1rem;
+  }
+
+  .adhkar-player-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-panel,
+  .sidebar-backdrop {
+    transition-duration: 0.01ms;
+  }
+
+  .quran-page-image.page-turn-forward,
+  .quran-page-image.page-turn-backward {
+    animation: none;
+  }
+}
+
+.app-splash-content > span:not(.app-splash-mark, .app-splash-spinner) {
+  color: rgb(255 255 255 / 76%);
+  font-size: 0.88rem;
+}
+
+.app-splash-mark {
+  box-shadow: 0 12px 40px rgb(0 0 0 / 24%);
+  animation: zad-splash-glow 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes zad-splash-glow {
+  to {
+    box-shadow: 0 14px 45px rgb(214 181 125 / 27%);
+    transform: translateY(-3px);
+  }
+}
+
+.sidebar-app-version,
+.app-version {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.sidebar-app-version {
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-app-version strong,
+.app-version strong {
+  color: var(--green-deep);
+  font-weight: 800;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.accountability-panel {
+  max-width: 940px;
+  margin-inline: auto;
+  padding: clamp(1rem, 3vw, 2rem);
+  border: 1px solid var(--border);
+  border-radius: 1.2rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.accountability-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 1.1rem;
+}
+
+.accountability-heading h1,
+.accountability-stats h2,
+.accountability-review h2 {
+  margin: 0.1rem 0 0.35rem;
+  color: var(--green-deep);
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  font-weight: 800;
+}
+
+.accountability-heading .section-description {
+  margin: 0;
+}
+
+.accountability-today-summary {
+  display: grid;
+  min-width: 10rem;
+  justify-items: center;
+  gap: 0.1rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--green-soft);
+  color: var(--green-deep);
+  text-align: center;
+}
+
+.accountability-today-summary strong {
+  font-size: 1.4rem;
+  line-height: 1.2;
+}
+
+.accountability-today-summary span {
+  font-size: 0.76rem;
+}
+
+.accountability-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--border);
+  color: var(--green-deep);
+}
+
+.accountability-tabs {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.65rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.accountability-tabs button {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.accountability-tabs button.is-active {
+  border-color: var(--border);
+  background: var(--green-soft);
+  color: var(--green-deep);
+}
+
+.accountability-quote {
+  margin: 1rem 0;
+  padding: 0.65rem 0.9rem;
+  border-inline-start: 3px solid var(--gold);
+  border-radius: 0.45rem;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.worship-categories {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.worship-category {
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface-soft);
+}
+
+.worship-category-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.worship-category-heading h3,
+.accountability-review-title,
+.worship-badges h3 {
+  margin: 0;
+  color: var(--green-deep);
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.worship-category-heading > span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.worship-task-list {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.worship-task {
+  display: flex;
+  min-width: 0;
+  min-height: 2.65rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.84rem;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.worship-task:has(input:disabled) {
+  cursor: default;
+}
+
+.worship-task:has(input:checked) {
+  border-color: rgb(71 134 107 / 35%);
+  background: var(--green-soft);
+}
+
+.worship-task input {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  accent-color: var(--green);
+}
+
+.worship-task > span:nth-of-type(1) {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.worship-custom-tag {
+  flex: 0 0 auto;
+  color: var(--gold);
+  font-size: 0.68rem;
+}
+
+.worship-task-order {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 0.15rem;
+}
+
+.worship-task-order button {
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface);
+  color: var(--ink);
+  line-height: 1;
+}
+
+.worship-task-order button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.worship-add-button {
+  position: fixed;
+  z-index: 1000;
+  inset-inline-end: auto;
+  inset-inline-start: 1.5rem;
+  bottom: 1.5rem;
+  display: grid;
+  width: 3.4rem;
+  height: 3.4rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 8px 24px rgb(16 55 46 / 25%);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.8rem;
+}
+
+.accountability-review,
+.accountability-stats {
+  padding-top: 1rem;
+}
+
+.worship-calendar {
+  margin-top: 0.85rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--surface-soft);
+}
+
+.worship-calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+}
+
+.worship-calendar-toolbar h3 {
+  margin: 0;
+  color: var(--green-deep);
+  font-size: 1rem;
+}
+
+.worship-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.worship-weekday {
+  padding: 0.2rem 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-align: center;
+}
+
+.worship-calendar-day,
+.worship-calendar-empty {
+  min-width: 0;
+  min-height: 3.15rem;
+}
+
+.worship-calendar-day {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.08rem;
+  padding: 0.15rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.76rem;
+}
+
+.worship-calendar-day small {
+  color: var(--muted);
+  font-size: 0.62rem;
+  line-height: 1.2;
+}
+
+.worship-calendar-day.has-progress {
+  border-color: rgb(71 134 107 / 45%);
+  background: var(--green-soft);
+  color: var(--green-deep);
+  font-weight: 800;
+}
+
+.worship-calendar-day.is-selected {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.worship-calendar-summary {
+  margin: 0.75rem 0 0;
+  color: var(--green-deep);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.accountability-review-title {
+  margin: 1rem 0 0.65rem;
+}
+
+.accountability-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0.9rem 0 1rem;
+}
+
+.accountability-stat-grid article {
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  gap: 0.35rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--surface-soft);
+}
+
+.accountability-stat-grid article span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.accountability-stat-grid article strong {
+  overflow-wrap: anywhere;
+  color: var(--green-deep);
+  font-size: 1.1rem;
+}
+
+.worship-badges {
+  margin-top: 1rem;
+}
+
+.worship-badges h3 {
+  margin-bottom: 0.65rem;
+}
+
+.worship-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.65rem;
+}
+
+.worship-badge {
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  padding: 0.8rem 0.6rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface-soft);
+  color: var(--muted);
+  opacity: 0.72;
+  text-align: center;
+}
+
+.worship-badge > span {
+  color: var(--muted);
+  font-size: 1.55rem;
+}
+
+.worship-badge strong {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.worship-badge small {
+  font-size: 0.7rem;
+}
+
+.worship-badge.is-unlocked {
+  border-style: solid;
+  border-color: rgb(189 151 96 / 65%);
+  background: linear-gradient(140deg, var(--gold-soft), var(--surface));
+  opacity: 1;
+}
+
+.worship-badge.is-unlocked > span {
+  color: var(--gold);
+}
+
+.accountability-floating-badge {
+  position: fixed;
+  z-index: 1090;
+  inset-inline-end: 1.5rem;
+  bottom: 1.5rem;
+  display: grid;
+  min-width: 8.5rem;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.05rem 0.45rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid rgb(189 151 96 / 60%);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(16 55 46 / 16%);
+  color: var(--green-deep);
+  cursor: pointer;
+  text-align: start;
+}
+
+.accountability-floating-badge > span {
+  grid-row: span 2;
+  color: var(--gold);
+  font-size: 1.3rem;
+}
+
+.accountability-floating-badge strong {
+  font-size: 0.78rem;
+}
+
+.accountability-floating-badge small {
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.35;
+}
+
+.accountability-dialog-backdrop {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgb(7 19 14 / 58%);
+}
+
+.accountability-dialog {
+  position: relative;
+  width: min(32rem, 100%);
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid var(--border);
+  border-radius: 1.1rem;
+  background: var(--surface);
+  box-shadow: 0 1.2rem 3.5rem rgb(0 0 0 / 28%);
+  color: var(--ink);
+}
+
+.accountability-dialog h2 {
+  margin: 0 2rem 1rem 0;
+  color: var(--green-deep);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.accountability-dialog-close {
+  position: absolute;
+  inset-block-start: 0.8rem;
+  inset-inline-end: 0.8rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.accountability-mode-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.accountability-mode-options button {
+  display: grid;
+  min-height: 10rem;
+  align-content: start;
+  justify-items: start;
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface-soft);
+  color: var(--ink);
+  text-align: start;
+}
+
+.accountability-mode-options button.is-selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgb(189 151 96 / 18%);
+}
+
+.accountability-mode-options button > span {
+  color: var(--gold);
+  font-size: 1.5rem;
+}
+
+.accountability-mode-options button strong {
+  color: var(--green-deep);
+  font-size: 1rem;
+}
+
+.accountability-mode-options button small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.7;
+}
+
+.accountability-custom-form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.accountability-custom-form label {
+  color: var(--green-deep);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.accountability-notice {
+  margin: 0.5rem 0;
+  color: #9b4d38;
+  font-size: 0.8rem;
+}
+
+.night-mode .accountability-panel,
+.night-mode .worship-category,
+.night-mode .worship-task,
+.night-mode .worship-calendar,
+.night-mode .worship-calendar-day,
+.night-mode .accountability-stat-grid article,
+.night-mode .worship-badge,
+.night-mode .accountability-dialog,
+.night-mode .accountability-mode-options button,
+.night-mode .accountability-floating-badge {
+  border-color: var(--border);
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+.night-mode .worship-task:has(input:checked),
+.night-mode .worship-calendar-day.has-progress,
+.night-mode .accountability-today-summary,
+.night-mode .accountability-tabs button.is-active {
+  background: var(--green-soft);
+  color: var(--green-deep);
+}
+
+.night-mode .worship-badge.is-unlocked {
+  background: linear-gradient(140deg, var(--gold-soft), var(--surface));
+}
+
+@media (max-width: 768px) {
+  .site-header .header-inner {
+    padding-inline: 1rem;
+  }
+
+  .accountability-panel {
+    padding: 1rem;
+  }
+
+  .accountability-floating-badge {
+    inset-inline-end: 0.75rem;
+    bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  .worship-add-button {
+    inset-inline-end: auto;
+    inset-inline-start: 0.75rem;
+    bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 575.98px) {
+  .accountability-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .accountability-today-summary {
+    width: 100%;
+    grid-template-columns: auto 1fr;
+    justify-items: start;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .worship-categories,
+  .accountability-stat-grid,
+  .accountability-mode-options {
+    grid-template-columns: 1fr;
+  }
+
+  .worship-calendar {
+    padding: 0.6rem;
+  }
+
+  .worship-calendar-grid {
+    gap: 0.18rem;
+  }
+
+  .worship-calendar-day,
+  .worship-calendar-empty {
+    min-height: 2.7rem;
+  }
+
+  .worship-weekday {
+    overflow: hidden;
+    font-size: 0.58rem;
+    text-overflow: ellipsis;
+  }
+}
+
+.telegram-lifetime-offer,
+.telegram-support-section {
+  overflow: hidden;
+  margin-top: 1.2rem;
+  border: 1px solid rgb(193 158 101 / 42%);
+  border-radius: 1.1rem;
+  background:
+    radial-gradient(circle at 90% 0, rgb(208 175 115 / 18%), transparent 40%),
+    var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+}
+
+.telegram-lifetime-offer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.9rem 1.5rem;
+  padding: clamp(1rem, 3vw, 1.6rem);
+}
+
+.telegram-lifetime-heading {
+  min-width: 0;
+}
+
+.telegram-lifetime-heading .section-kicker,
+.telegram-lifetime-heading h2,
+.telegram-lifetime-heading p:last-child {
+  margin-bottom: 0.35rem;
+}
+
+.telegram-lifetime-heading h2,
+.telegram-support-copy h2 {
+  color: var(--green-deep);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  font-weight: 800;
+}
+
+.telegram-lifetime-heading > p:last-child,
+.telegram-support-copy > p:not(.section-kicker) {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.telegram-lifetime-price {
+  display: grid;
+  align-content: center;
+  justify-items: end;
+  gap: 0.35rem;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.telegram-lifetime-price del {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.telegram-lifetime-price strong {
+  color: #9a6e22;
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-weight: 900;
+}
+
+.telegram-lifetime-price strong span {
+  display: block;
+  font-size: 0.76em;
+  text-align: end;
+}
+
+.telegram-plan-benefits {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  color: var(--ink);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.telegram-lifetime-offer .telegram-plan-benefits {
+  grid-column: 1 / -1;
+}
+
+.telegram-lifetime-offer .telegram-service-actions {
+  grid-column: 1 / -1;
+}
+
+.telegram-service-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+.telegram-support-section {
+  padding: 0;
+}
+
+.telegram-support-marquee {
+  display: flex;
+  overflow: hidden;
+  gap: 2rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--gold);
+  direction: ltr;
+  white-space: nowrap;
+}
+
+.telegram-support-marquee span {
+  flex: 0 0 auto;
+  min-width: 100%;
+  animation: telegram-support-scroll 24s linear infinite;
+  font-size: 0.77rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+@keyframes telegram-support-scroll {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.telegram-support-copy {
+  padding: 1.2rem clamp(1rem, 3vw, 1.6rem) 1.4rem;
+}
+
+.telegram-support-copy h2 {
+  margin-bottom: 0.35rem;
+}
+
+.telegram-support-copy .btn {
+  min-height: 2.75rem;
+}
+
+.telegram-checkout-controls,
+.telegram-link-controls,
+.telegram-checkout-buttons,
+.telegram-receipt-form,
+.telegram-promo-actions {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.telegram-checkout-controls > p,
+.telegram-link-controls > p {
+  margin: 0;
+}
+
+.telegram-checkout-buttons {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.telegram-checkout-buttons .btn {
+  min-height: 2.8rem;
+  font-size: 0.82rem;
+}
+
+.telegram-receipt-form {
+  margin-top: 0.35rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--surface-soft);
+}
+
+.telegram-receipt-form h4 {
+  margin: 0;
+  color: var(--green-deep);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.telegram-receipt-form small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.telegram-receipt-form .settings-note {
+  margin: 0;
+}
+
+.telegram-promo-modal-content,
+.telegram-success-modal-content {
+  --bs-modal-bg: var(--surface);
+  --bs-modal-color: var(--ink);
+}
+
+.telegram-promo-modal-content .modal-body,
+.telegram-success-modal-content .modal-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.telegram-promo-actions .btn {
+  min-height: 2.8rem;
+}
+
+.telegram-confetti {
+  overflow: hidden;
+  color: var(--gold);
+  font-size: clamp(1.2rem, 5vw, 2.2rem);
+  letter-spacing: 0.3rem;
+  text-align: center;
+  animation: telegram-confetti-pop 650ms ease-out both;
+}
+
+@keyframes telegram-confetti-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.75);
+  }
+
+  65% {
+    opacity: 1;
+    transform: translateY(4px) scale(1.08);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.night-mode .telegram-lifetime-offer,
+.night-mode .telegram-support-section,
+.night-mode .telegram-receipt-form {
+  border-color: #594b33;
+  background-color: var(--surface);
+}
+
+.night-mode .telegram-lifetime-price strong {
+  color: #e1c489;
+}
+
+.quiz-status,
+.quiz-calendar-summary {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.quiz-range-fields,
+.quiz-session-controls,
+.quiz-calendar-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.quiz-filters {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.6fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.quiz-filters label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--ink);
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+.quiz-range-fields {
+  min-width: 0;
+}
+
+.quiz-range-fields[hidden] {
+  display: none;
+}
+
+.quiz-range-fields > label {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.quiz-session-controls {
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.quiz-hearts {
+  color: #b84448;
+  font-weight: 800;
+  letter-spacing: 0.12rem;
+}
+
+.quiz-status {
+  min-height: 1.5rem;
+  margin-top: 0.65rem;
+}
+
+.quiz-question {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface-soft);
+}
+
+.quiz-question[hidden],
+.quiz-celebration[hidden] {
+  display: none;
+}
+
+.quiz-question-reference {
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+#quiz-verse-prompt {
+  margin: 0;
+  color: var(--green-deep);
+  font-weight: 700;
+}
+
+.quiz-verse-context {
+  margin: 0;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: Tahoma, Arial, sans-serif;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  line-height: 2;
+}
+
+.quiz-stop-point {
+  display: inline-block;
+  min-width: 5.5rem;
+  margin-inline: 0.2rem;
+  padding-inline: 0.25rem;
+  border-bottom: 2px dashed var(--gold);
+  color: var(--gold);
+  font-size: 0.78em;
+  text-align: center;
+  vertical-align: baseline;
+}
+
+.quiz-answer-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.quiz-answer-option {
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font-family: Tahoma, Arial, sans-serif;
+  line-height: 1.9;
+  text-align: start;
+}
+
+.quiz-answer-option:hover:not(:disabled) {
+  border-color: var(--green);
+}
+
+.quiz-answer-option.is-correct {
+  border-color: #47866b;
+  background: rgb(71 134 107 / 12%);
+}
+
+.quiz-answer-option.is-incorrect {
+  border-color: #ba5858;
+  background: rgb(186 88 88 / 10%);
+}
+
+.quiz-celebration {
+  position: relative;
+  min-height: 3.5rem;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--green-deep);
+  text-align: center;
+}
+
+.quiz-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.quiz-confetti span {
+  position: absolute;
+  top: -1rem;
+  width: 0.48rem;
+  height: 0.75rem;
+  border-radius: 2px;
+  background: var(--gold);
+  animation: quiz-confetti-fall 1.2s ease-in both;
+}
+
+.quiz-confetti span:nth-child(3n) {
+  background: #4d9873;
+}
+
+.quiz-confetti span:nth-child(3n + 1) {
+  background: #d47f68;
+}
+
+@keyframes quiz-confetti-fall {
+  to {
+    transform: translateY(4rem) rotate(480deg);
+    opacity: 0;
+  }
+}
+
+.memorization-modal-content {
+  --bs-modal-bg: var(--surface);
+  --bs-modal-color: var(--ink);
+}
+
+.memorization-modal-dialog {
+  width: min(760px, calc(100vw - 1rem));
+  max-width: none;
+}
+
+.memorization-modal-content .modal-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.memorization-intro {
+  display: block;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+.quiz-calendar-open {
+  justify-self: start;
+}
+
+.quiz-calendar-section[hidden] {
+  display: none;
+}
+
+.quiz-calendar-toolbar {
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.quiz-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.quiz-calendar-weekday,
+.quiz-calendar-day,
+.quiz-calendar-empty {
+  display: grid;
+  min-height: 2.4rem;
+  place-items: center;
+}
+
+.quiz-calendar-weekday {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.quiz-calendar-day {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.quiz-calendar-day.has-practice {
+  border-color: #5c9878;
+  background: rgb(92 152 120 / 20%);
+  font-weight: 800;
+}
+
+.quiz-calendar-day small {
+  position: absolute;
+  inset-block-end: -0.08rem;
+  color: var(--green-deep);
+  font-size: 0.55rem;
+}
+
+.quiz-calendar-summary {
+  margin-top: 0.8rem;
+  text-align: center;
+}
+
+.telegram-support-badge {
+  display: inline-flex;
+  margin: 0 0 0.85rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid rgb(189 151 96 / 38%);
+  border-radius: 999px;
+  background: var(--gold-soft);
+  color: var(--green-deep);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.night-mode .quiz-question,
+.night-mode .quiz-answer-option,
+.night-mode .quiz-calendar-day,
+.night-mode .quiz-verse-context,
+.night-mode .memorization-modal-content {
+  border-color: var(--border);
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+.night-mode .quiz-answer-option.is-correct,
+.night-mode .quiz-calendar-day.has-practice {
+  border-color: #5c9878;
+  background: rgb(92 152 120 / 22%);
+}
+
+.night-mode .quiz-answer-option.is-incorrect {
+  border-color: #ba5858;
+  background: rgb(186 88 88 / 16%);
+}
+
+.night-mode .telegram-support-badge {
+  border-color: #594b33;
+  background: var(--gold-soft);
+  color: var(--green-deep);
+}
+
+@media (max-width: 767.98px) {
+  .telegram-lifetime-offer {
+    grid-template-columns: 1fr;
+  }
+
+  .telegram-lifetime-price {
+    justify-items: start;
+  }
+
+  .telegram-lifetime-price strong span {
+    text-align: start;
+  }
+
+  .telegram-lifetime-offer .telegram-service-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .telegram-checkout-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .quiz-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .quiz-answer-options {
+    grid-template-columns: 1fr;
+  }
+
+  .quiz-range-fields {
+    flex-wrap: wrap;
+  }
+
+  .quiz-range-fields > label {
+    flex: 1 1 7rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-splash-mark,
+  .telegram-support-marquee span,
+  .telegram-confetti,
+  .quiz-confetti span {
+    animation: none;
+  }
 }

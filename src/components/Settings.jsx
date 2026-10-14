@@ -1,4 +1,5 @@
 import { getSettingsMarkupParts } from './legacyMarkup.js';
+import AppVersion from './AppVersion.jsx';
 import SupportCard from './SupportCard.jsx';
 
 export default function Settings() {
@@ -12,6 +13,7 @@ export default function Settings() {
             <div dangerouslySetInnerHTML={{ __html: parts.beforeSupport }} />
             <SupportCard />
             <div dangerouslySetInnerHTML={{ __html: parts.afterSupport }} />
+            <AppVersion />
           </div>
         </div>
       </div>
