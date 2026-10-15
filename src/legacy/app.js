@@ -977,10 +977,38 @@ const quizOptions = document.querySelector('#quiz-answer-options');
 const quizNextButton = document.querySelector('#quiz-next');
 const quizCancelButton = document.querySelector('#quiz-cancel');
 const quizHearts = document.querySelector('#quiz-hearts');
+const quizStreak = document.querySelector('#quiz-streak');
 const quizCelebration = document.querySelector('#quiz-celebration');
 const quizProgressKey = 'zad.quranQuizProgress.v1';
 let quizSession = null;
 let quizCalendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let quizCalendarSelectedDate = getLocalDateKey();
+
+function readQuizProgress() {
+  const stored = readStorage(quizProgressKey, {});
+  if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return {};
+  const entries = Object.entries(stored).flatMap(([date, value]) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/u.test(date)) return [];
+    const parsedDate = new Date(`${date}T12:00:00`);
+    if (Number.isNaN(parsedDate.getTime()) || getLocalDateKey(parsedDate) !== date) return [];
+    const sessions = typeof value === 'number' ? value : value?.sessions;
+    const highScore = typeof value === 'object' && value !== null ? value.highScore : 0;
+    return [[date, {
+      sessions: Number.isInteger(sessions) && sessions > 0 ? Math.min(sessions, 10000) : 0,
+      highScore: Number.isInteger(highScore) && highScore > 0 ? Math.min(highScore, 10000) : 0,
+    }]];
+  });
+  return Object.fromEntries(entries.sort(([left], [right]) => left.localeCompare(right)).slice(-730));
+}
+
+function saveQuizHighScore(score) {
+  const progress = readQuizProgress();
+  const today = getLocalDateKey();
+  const record = progress[today] ?? { sessions: 0, highScore: 0 };
+  progress[today] = { ...record, highScore: Math.max(record.highScore, score) };
+  writeStorage(quizProgressKey, progress);
+  renderQuizCalendar();
+}
 
 function createSelectOptions(select, records) {
   const options = records.map((record) => {
@@ -1044,11 +1072,14 @@ function updateQuizScopeFields() {
 function renderQuizHearts() {
   if (!quizSession) {
     quizHearts.hidden = true;
+    quizStreak.hidden = true;
     return;
   }
   quizHearts.hidden = false;
   quizHearts.textContent = `القلوب: ${'♥'.repeat(quizSession.lives)}${'♡'.repeat(3 - quizSession.lives)}`;
   quizHearts.setAttribute('aria-label', `بقي ${quizSession.lives} من 3 قلوب`);
+  quizStreak.hidden = false;
+  quizStreak.textContent = `سلسلة الإجابات: ${quizSession.streak}`;
 }
 
 function shuffleItems(items) {
@@ -1081,12 +1112,14 @@ function finishQuiz() {
     confetti.append(piece);
   }
   quizCelebration.append(confetti, celebrationText);
-  const progress = readStorage(quizProgressKey, {});
-  const safeProgress = progress && typeof progress === 'object' && !Array.isArray(progress) ? progress : {};
   const today = getLocalDateKey();
-  const previousCount = Number.isInteger(safeProgress[today]) && safeProgress[today] >= 0 ? safeProgress[today] : 0;
-  safeProgress[today] = previousCount + 1;
-  writeStorage(quizProgressKey, safeProgress);
+  const progress = readQuizProgress();
+  const previousRecord = progress[today] ?? { sessions: 0, highScore: 0 };
+  progress[today] = {
+    sessions: previousRecord.sessions + 1,
+    highScore: Math.max(previousRecord.highScore, quizSession.streak),
+  };
+  writeStorage(quizProgressKey, progress);
   quizSession = null;
   renderQuizHearts();
   renderQuizCalendar();
@@ -1136,6 +1169,8 @@ function showNextQuizQuestion() {
       quizSession.answered = true;
       if (phraseKey([choice]) === correctKey) {
         quizSession.correct += 1;
+        quizSession.streak += 1;
+        saveQuizHighScore(quizSession.streak);
         quizStatus.textContent = 'إجابة صحيحة، أحسنت!';
         button.classList.add('is-correct');
       } else {
@@ -1151,11 +1186,13 @@ function showNextQuizQuestion() {
         });
       }
       quizOptions.querySelectorAll('button').forEach((option) => { option.disabled = true; });
-      renderQuizHearts();
       if (quizSession.lives <= 0) {
+        quizSession.streak = 0;
+        renderQuizHearts();
         startQuiz('نفدت القلوب الثلاثة؛ أُعيد الاختبار وبدأت جولة جديدة.');
         return;
       }
+      renderQuizHearts();
       quizNextButton.hidden = false;
     });
     quizOptions.append(button);
@@ -1187,6 +1224,7 @@ function startQuiz(restartMessage = '') {
       used: new Set(),
       current: null,
       correct: 0,
+      streak: 0,
       lives: 3,
       answered: false,
       questionLimit: Math.min(10, pool.length),
@@ -1220,10 +1258,13 @@ function renderQuizCalendar() {
   const grid = document.querySelector('#quiz-calendar-grid');
   const monthLabel = document.querySelector('#quiz-calendar-month');
   const summary = document.querySelector('#quiz-calendar-summary');
-  const progress = readStorage(quizProgressKey, {});
-  const safeProgress = progress && typeof progress === 'object' && !Array.isArray(progress) ? progress : {};
+  const progress = readQuizProgress();
   const monthStart = new Date(quizCalendarMonth.getFullYear(), quizCalendarMonth.getMonth(), 1);
   const monthEnd = new Date(quizCalendarMonth.getFullYear(), quizCalendarMonth.getMonth() + 1, 0);
+  const today = getLocalDateKey();
+  const nextMonthButton = document.querySelector('#quiz-calendar-next');
+  const currentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  nextMonthButton.disabled = monthStart >= currentMonth;
   monthLabel.textContent = new Intl.DateTimeFormat('ar-EG', { month: 'long', year: 'numeric' }).format(monthStart);
   grid.replaceChildren();
   ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'].forEach((day) => {
@@ -1241,26 +1282,41 @@ function renderQuizCalendar() {
     grid.append(blank);
   }
   let monthlySessions = 0;
+  let monthlyBestScore = 0;
   for (let day = 1; day <= monthEnd.getDate(); day += 1) {
     const date = new Date(monthStart.getFullYear(), monthStart.getMonth(), day);
     const key = getLocalDateKey(date);
-    const count = Number.isInteger(safeProgress[key]) && safeProgress[key] > 0 ? safeProgress[key] : 0;
-    monthlySessions += count;
-    const cell = document.createElement('span');
+    const record = progress[key] ?? { sessions: 0, highScore: 0 };
+    monthlySessions += record.sessions;
+    monthlyBestScore = Math.max(monthlyBestScore, record.highScore);
+    const cell = document.createElement('button');
+    cell.type = 'button';
     cell.className = 'quiz-calendar-day';
-    cell.classList.toggle('has-practice', count > 0);
+    cell.classList.toggle('has-practice', record.sessions > 0 || record.highScore > 0);
+    cell.classList.toggle('is-selected', key === quizCalendarSelectedDate);
     cell.setAttribute('role', 'gridcell');
-    cell.setAttribute('aria-label', `${day}: ${count ? `${count} جلسة مراجعة` : 'لا توجد مراجعة مسجلة'}`);
+    cell.setAttribute('aria-label', `${key}: ${record.sessions} جلسة مراجعة، أعلى سلسلة ${record.highScore}`);
+    cell.setAttribute('aria-pressed', String(key === quizCalendarSelectedDate));
+    cell.disabled = key > today;
+    cell.title = `${record.sessions} جلسة مراجعة · أعلى سلسلة ${record.highScore}`;
+    cell.addEventListener('click', () => {
+      quizCalendarSelectedDate = key;
+      renderQuizCalendar();
+    });
     cell.textContent = String(day);
-    if (count > 0) {
+    if (record.sessions > 0 || record.highScore > 0) {
       const marker = document.createElement('small');
-      marker.textContent = String(count);
+      marker.textContent = `${record.sessions}·${record.highScore}`;
       marker.setAttribute('aria-hidden', 'true');
       cell.append(marker);
     }
     grid.append(cell);
   }
-  summary.textContent = `جلسات المراجعة المكتملة هذا الشهر: ${monthlySessions}`;
+  const selectedRecord = progress[quizCalendarSelectedDate] ?? { sessions: 0, highScore: 0 };
+  summary.textContent = [
+    `جلسات المراجعة المكتملة هذا الشهر: ${monthlySessions} · أعلى سلسلة: ${monthlyBestScore}`,
+    `${quizCalendarSelectedDate}: ${selectedRecord.sessions} جلسة · أعلى إنجاز يومي: ${selectedRecord.highScore}`,
+  ].join('\n');
 }
 
 function initializeQuranQuiz() {
@@ -1696,13 +1752,14 @@ if (notesField) {
 }
 
 async function sendFeedback(category, message, form) {
+  if (__GITHUB_PAGES__) throw new Error('feedback-static-hosting');
   const requestId = form.dataset.requestId || window.crypto.randomUUID();
   form.dataset.requestId = requestId;
   const response = await fetchApp('api/feedback', {
     method: 'POST',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
     },
     body: JSON.stringify({
       category,
@@ -1719,8 +1776,20 @@ async function sendFeedback(category, message, form) {
     throw new Error('تعذر قراءة استجابة الخادم. حاول مرة أخرى لاحقاً.');
   }
   if (!response.ok || result.success !== true) {
-    throw new Error('تعذر إرسال الرسالة حالياً.');
+    throw new Error(result.error === 'Feedback service is not configured'
+      ? 'feedback-service-not-configured'
+      : 'feedback-delivery-failed');
   }
+}
+
+function feedbackFailureMessage(error, keepDraft = false) {
+  const failureCode = error instanceof Error ? error.message : '';
+  const prefix = failureCode === 'feedback-static-hosting'
+    ? 'استضافة GitHub Pages لا توفر خادماً لاستقبال الرسائل؛ يلزم استخدام نسخة مرتبطة بخادم Vercel أو PHP.'
+    : failureCode === 'feedback-service-not-configured'
+      ? 'خدمة استقبال الملاحظات غير مهيأة على الخادم بعد.'
+      : 'تعذر الاتصال بخادم استقبال الملاحظات. حاول مرة أخرى لاحقاً.';
+  return keepDraft ? `${prefix} بقيت رسالتك محفوظة كمسودة على هذا الجهاز.` : prefix;
 }
 
 const feedbackForm = document.querySelector('#feedback-form');
@@ -1756,7 +1825,7 @@ if (feedbackForm && notesField) {
       delete feedbackForm.dataset.requestId;
       status.textContent = 'تم إرسال ملاحظتك بنجاح، شكراً لمشاركتك!';
     } catch (error) {
-      status.textContent = 'تعذر الاتصال بالخادم. بقيت الرسالة محفوظة كمسودة على هذا الجهاز.';
+      status.textContent = feedbackFailureMessage(error, true);
     } finally {
       submitButton.disabled = false;
       submitButton.textContent = 'إرسال للمراجعة';
@@ -2307,7 +2376,7 @@ feedbackModalForm.addEventListener('submit', async (event) => {
     feedbackModalStatus.textContent = 'تم إرسال ملاحظتك بنجاح، شكراً لمشاركتك!';
   } catch (error) {
     feedbackModalStatus.classList.add('is-error');
-    feedbackModalStatus.textContent = 'تعذر الاتصال بالخادم. حاول مرة أخرى لاحقاً.';
+    feedbackModalStatus.textContent = feedbackFailureMessage(error);
   } finally {
     feedbackModalSubmit.disabled = false;
     feedbackModalSubmit.textContent = 'إرسال للمراجعة';
@@ -2959,8 +3028,8 @@ try {
     showEmpty(duasList, `تعذر تحميل ملف الأدعية: ${error.message}`, 'empty-message');
     console.error('Failed to load duas.json:', error);
   }
-  statusElement.textContent = 'تم تحميل بيانات التطبيق.';
-  statusElement.className = 'load-status is-success';
+  statusElement.textContent = '';
+  statusElement.className = 'load-status';
   await quranSearchLoadPromise;
   window.__zadHydrationState = { ...window.__zadHydrationState, quran: true };
   window.dispatchEvent(new Event('zad:quran-ready'));
@@ -2979,10 +3048,25 @@ try {
 
 if (quranSearchReady && surahs.length) initializeQuranQuiz();
 
-try {
-  if (localStorage.getItem('hasCompletedTour') !== 'true') {
-    window.setTimeout(startOnboardingTour, 650);
+function shouldShowOnboardingTour() {
+  try {
+    return localStorage.getItem('hasCompletedTour') !== 'true';
+  } catch (error) {
+    console.warn('Could not check onboarding tour completion:', error);
+    return true;
   }
-} catch (error) {
-  console.warn('Could not check onboarding tour completion:', error);
 }
+
+function scheduleInitialOnboardingTour() {
+  if (!shouldShowOnboardingTour()) return;
+  const showAfterHydration = () => {
+    if (shouldShowOnboardingTour()) window.setTimeout(startOnboardingTour, 350);
+  };
+  if (window.__zadHydrationState?.quran) {
+    showAfterHydration();
+  } else {
+    window.addEventListener('zad:quran-ready', showAfterHydration, { once: true });
+  }
+}
+
+scheduleInitialOnboardingTour();

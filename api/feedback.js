@@ -104,7 +104,10 @@ export default async function handler(req, res) {
   try {
     const upstreamResponse = await fetch(parsedScriptUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
+      },
       body: JSON.stringify({
         secret: sharedSecret,
         requestId: payload.requestId,

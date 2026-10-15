@@ -335,12 +335,17 @@ button {
 }
 
 .load-status {
+  display: none;
   min-height: 1.5rem;
   margin: 0 auto 1rem;
   color: var(--muted);
   font-size: 0.79rem;
   text-align: center;
   transition: opacity 200ms ease;
+}
+
+.load-status:not(:empty) {
+  display: block;
 }
 
 .load-status.is-success {
@@ -5461,6 +5466,12 @@ body.quran-active:not(.reader-focus-mode) .quran-reader:not(:fullscreen) .mushaf
   letter-spacing: 0.12rem;
 }
 
+.quiz-streak {
+  color: var(--green-deep);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .quiz-status {
   min-height: 1.5rem;
   margin-top: 0.65rem;
@@ -5650,11 +5661,24 @@ body.quran-active:not(.reader-focus-mode) .quran-reader:not(:fullscreen) .mushaf
 
 .quiz-calendar-day {
   position: relative;
+  width: 100%;
+  padding: 0.2rem;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--surface-soft);
   color: var(--ink);
+  cursor: pointer;
   font-size: 0.82rem;
+}
+
+.quiz-calendar-day:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.quiz-calendar-day.is-selected {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
 }
 
 .quiz-calendar-day.has-practice {
@@ -5673,6 +5697,7 @@ body.quran-active:not(.reader-focus-mode) .quran-reader:not(:fullscreen) .mushaf
 .quiz-calendar-summary {
   margin-top: 0.8rem;
   text-align: center;
+  white-space: pre-line;
 }
 
 .telegram-support-badge {
